@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(RM)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clients       Client[]
+  notifications Notification[]
+}
+
+enum Role {
+  ADMIN
+  RM
+}
+
+model Client {
+  id                  String    @id @default(uuid())
+  name                String
+  pan                 String    @unique
+  familyHead          String?
+  rmId                String
+  rm                  User      @relation(fields: [rmId], references: [id])
+  totalAum            Float     @default(0)
+  equityAum           Float     @default(0)
+  debtAum             Float     @default(0)
+  hybridAum           Float     @default(0)
+  totalUnits          Float?    @default(0)
+  totalInvested       Float?    @default(0)
+  totalGain           Float?    @default(0)
+  overallCagr         Float?
+  overallAbsoluteReturn Float?
+  lastPortfolioReview DateTime? @default(now())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  holdings       ClientHolding[]
+  notifications  Notification[]
+  ClientHistory  ClientHistory[]
+  HoldingHistory HoldingHistory[]
+}
+
+model ResearchFund {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  category          String?
+  subCategory       String?
+  aum               Float?
+  peRatio           Float?
+  pbRatio           Float?
+  ret3M             Float?
+  ret6M             Float?
+  ret1Y             Float?
+  ret3Y             Float?
+  ret5Y             Float?
+  quartile          String? // e.g., "Q1-TOP QUARTILE", "Q4-BOTTOM QUARTILE"
+  selectionPriority Int? // e.g., 1, 4, 6
+  action            String? // Could be derived or explicit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  holdings       ClientHolding[]
+  mappingRules   FundMappingRule[]
+  HoldingHistory HoldingHistory[]
+}
+
+model FundMappingRule {
+  id             String       @id @default(uuid())
+  rawName        String       @unique
+  researchFundId String
+  researchFund   ResearchFund @relation(fields: [researchFundId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model ClientHolding {
+  id             String        @id @default(uuid())
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id])
+  fundId         String?
+  researchFund   ResearchFund? @relation(fields: [fundId], references: [id])
+  fundNameRaw    String // To store the exact name from the client sheet
+  folioNumber    String?
+  investedAmount Float?
+  currentValue   Float?
+  units          Float?
+  purchaseNav    Float?
+  currentNav     Float?
+  dividend       Float?
+  gain           Float?
+  holdingDays    Int?
+  absoluteReturn Float?
+  cagr           Float?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Notification {
+  id         String    @id @default(uuid())
+  rmId       String
+  rm         User      @relation(fields: [rmId], references: [id])
+  clientId   String?
+  client     Client?   @relation(fields: [clientId], references: [id])
+  message    String
+  type       String // e.g., "Q3_ALERT", "Q4_ALERT"
+  isRead     Boolean   @default(false)
+  status     String    @default("PENDING") // PENDING, RESOLVED, ESCALATED
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model ClientHistory {
+  id       String   @id @default(uuid())
+  clientId String
+  client   Client   @relation(fields: [clientId], references: [id])
+  date     DateTime @default(now())
+
+  totalAum   Float
+  equityAum  Float
+  debtAum    Float
+  hybridAum  Float
+  totalUnits Float?
+  totalInvested Float?
+  totalGain  Float?
+  overallCagr Float?
+  overallAbsoluteReturn Float?
+
+  @@index([clientId, date])
+}
+
+model HoldingHistory {
+  id       String   @id @default(uuid())
+  clientId String
+  client   Client   @relation(fields: [clientId], references: [id])
+  date     DateTime @default(now())
+
+  fundNameRaw  String
+  fundId       String?
+  researchFund ResearchFund? @relation(fields: [fundId], references: [id])
+
+  folio        String?
+  currentValue Float?
+  units        Float?
+  investedAmount Float?
+  purchaseNav    Float?
+  currentNav     Float?
+  dividend       Float?
+  gain           Float?
+  holdingDays    Int?
+  absoluteReturn Float?
+  cagr           Float?
+
+  @@index([clientId, date])
+}
+
+model SystemSettings {
+  id                  String   @id @default("default")
+  reviewThresholdDays Int      @default(45)
+  updatedAt           DateTime @updatedAt
+}
