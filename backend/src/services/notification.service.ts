@@ -33,16 +33,25 @@ export const generateQuartileNotifications = async () => {
 
     if (message) {
       // Check if we already notified the RM about this exact client and fund recently
-      // For simplicity, we just create it. In production, add a unique constraint or check.
-      await prisma.notification.create({
-        data: {
-          rmId: holding.client.rm.id,
+      const existing = await prisma.notification.findFirst({
+        where: {
           clientId: holding.client.id,
-          message,
-          type
+          message: message,
+          status: 'PENDING'
         }
       });
-      notificationsCreated++;
+
+      if (!existing) {
+        await prisma.notification.create({
+          data: {
+            rmId: holding.client.rm.id,
+            clientId: holding.client.id,
+            message,
+            type
+          }
+        });
+        notificationsCreated++;
+      }
     }
   }
 
