@@ -260,6 +260,12 @@ export default function ClientDetailView() {
                       Invested
                     </th>
                     <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                      Pur. NAV
+                    </th>
+                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                      Cur. NAV
+                    </th>
+                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
                       Current Value
                     </th>
                     <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
@@ -267,6 +273,9 @@ export default function ClientDetailView() {
                     </th>
                     <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
                       CAGR
+                    </th>
+                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                      Days
                     </th>
                     <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
                       Quartile
@@ -330,6 +339,12 @@ export default function ClientDetailView() {
                         <td className="py-3 px-4 text-right text-gray-600">
                           ₹{holding.investedAmount?.toLocaleString() || "-"}
                         </td>
+                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                          {holding.purchaseNav ? '₹' + holding.purchaseNav.toLocaleString() : "-"}
+                        </td>
+                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                          {holding.currentNav ? '₹' + holding.currentNav.toLocaleString() : "-"}
+                        </td>
                         <td className="py-3 px-4 text-right font-medium text-gray-800">
                           ₹{holding.currentValue?.toLocaleString() || "-"}
                         </td>
@@ -344,6 +359,9 @@ export default function ClientDetailView() {
                         </td>
                         <td className="py-3 px-4 text-right font-medium text-emerald-600">
                           {holding.cagr ? holding.cagr + "%" : "-"}
+                        </td>
+                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                          {holding.holdingDays ? holding.holdingDays.toLocaleString() : "-"}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {rf ? (
