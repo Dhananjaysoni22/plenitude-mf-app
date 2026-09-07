@@ -1,5 +1,8 @@
 
+import { PrismaClient } from '@prisma/client';
 import { Response } from 'express';
+
+const prisma = new PrismaClient();
 import { AuthRequest } from '../middlewares/auth';
 import { 
   fetchClients, 
@@ -55,3 +58,35 @@ export const getStats = asyncHandler(async (req: AuthRequest, res: Response) => 
   const stats = await fetchGlobalStats();
   res.json(stats);
 });
+
+export const getDrawdownData = async (req: any, res: any) => {
+  try {
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const currentDrawdown = settings?.currentDrawdown || 0;
+    
+    const history = await prisma.marketHistory.findMany({
+      orderBy: { date: 'desc' },
+      take: 7
+    });
+
+    const activeRule = await prisma.drawdownRule.findFirst({
+      where: {
+        minDrawdown: { lte: currentDrawdown },
+        maxDrawdown: { gte: currentDrawdown }
+      }
+    });
+
+    // Also get all rules for the admin grid
+    const allRules = await prisma.drawdownRule.findMany({ orderBy: { step: 'asc' }});
+
+    res.json({
+      currentDrawdown,
+      activeRule,
+      history: history.reverse(),
+      allRules
+    });
+  } catch (err) {
+    console.error('getDrawdownData ERROR:', err);
+    res.status(500).json({ error: 'Failed to fetch drawdown data' });
+  }
+};

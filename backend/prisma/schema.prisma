@@ -167,5 +167,27 @@ model HoldingHistory {
 model SystemSettings {
   id                  String   @id @default("default")
   reviewThresholdDays Int      @default(45)
+  currentDrawdown     Float    @default(0)
   updatedAt           DateTime @updatedAt
 }
+
+model DrawdownRule {
+  id               String @id @default(uuid())
+  step             Int    @unique
+  minDrawdown      Float
+  maxDrawdown      Float
+  equityAllocation Float
+  debtAllocation   Float
+}
+
+model MarketHistory {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  indexName String   @default("NIFTY 50")
+  price     Float
+  peakPrice Float
+  drawdown  Float
+  
+  @@unique([date, indexName])
+}
+

@@ -84,6 +84,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         <NavItem to="/clients" icon={<Users size={20} />} label="Clients" />
         <NavItem to="/research" icon={<PieChart size={20} />} label="Research" />
         <NavItem to="/mapping" icon={<GitMerge size={20} />} label="Mapping" adminOnly />
+        <NavItem to="/strategy" icon={<TrendingUp size={20} />} label="Strategy" adminOnly />
         <NavItem to="/staff" icon={<Shield size={20} />} label="Staff" adminOnly />
       </nav>
 

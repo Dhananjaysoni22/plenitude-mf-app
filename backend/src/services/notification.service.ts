@@ -57,3 +57,57 @@ export const generateQuartileNotifications = async () => {
 
   return notificationsCreated;
 };
+
+export const generateDrawdownNotifications = async () => {
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+  const currentDrawdown = settings?.currentDrawdown || 0;
+
+  const activeRule = await prisma.drawdownRule.findFirst({
+    where: {
+      minDrawdown: { lte: currentDrawdown },
+      maxDrawdown: { gte: currentDrawdown }
+    }
+  });
+
+  if (!activeRule) return 0;
+
+  const clients = await prisma.client.findMany({
+    include: { rm: true }
+  });
+
+  let notificationsCreated = 0;
+
+  for (const client of clients) {
+    if (!client.rm || client.totalAum === 0) continue;
+
+    const actualEquityPct = (client.equityAum / client.totalAum) * 100;
+    const targetEquityPct = activeRule.equityAllocation;
+
+    // Deviation > 5% triggers a rebalance alert
+    if (Math.abs(actualEquityPct - targetEquityPct) > 5) {
+      const message = `REBALANCE: Market Drawdown is ${currentDrawdown.toFixed(2)}%. Target Equity is ${targetEquityPct}%, but client currently holds ${actualEquityPct.toFixed(1)}%.`;
+      
+      const existing = await prisma.notification.findFirst({
+        where: {
+          clientId: client.id,
+          type: 'DRAWDOWN_ALERT',
+          status: 'PENDING'
+        }
+      });
+
+      if (!existing) {
+        await prisma.notification.create({
+          data: {
+            rmId: client.rm.id,
+            clientId: client.id,
+            message,
+            type: 'DRAWDOWN_ALERT'
+          }
+        });
+        notificationsCreated++;
+      }
+    }
+  }
+
+  return notificationsCreated;
+};

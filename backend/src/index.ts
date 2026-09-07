@@ -21,8 +21,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
+import { initCronJobs } from './cron/drawdown.cron';
+
 // Centralized Error Handling Middleware (must be exactly here, after all routes)
 app.use(errorHandler);
+
+// Start Background Jobs
+initCronJobs();
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { getRmIntelligence } from '../api/rm.api';
 import { AlertTriangle, TrendingDown, PhoneCall, ShieldAlert, Target, Zap } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { MarketStrategyWidget } from './MarketStrategyWidget';
+import axiosClient from '../api/axiosClient';
 
 export default function RmActionDashboard() {
   const [data, setData] = useState<any>(null);
@@ -10,16 +12,28 @@ export default function RmActionDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getRmIntelligence()
-      .then(res => {
-        setData(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.response?.data?.error || 'Failed to load RM Intelligence');
-        setLoading(false);
-      });
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await axiosClient.get('/rm/intelligence');
+      setData(res.data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to load RM Action Center');
+      setLoading(false);
+    }
+  };
+
+  const markReviewed = async (clientId: string) => {
+    try {
+      await axiosClient.post(`/rm/clients/${clientId}/review`);
+      fetchDashboardData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) return <div className="p-8 text-gray-500 font-medium">Loading Intelligence...</div>;
   if (error) return <div className="p-8 text-red-500 font-medium">{error}</div>;
@@ -31,6 +45,9 @@ export default function RmActionDashboard() {
 
   return (
     <div className="w-full max-w-[98%] mx-auto mt-8 pb-12">
+      
+      <MarketStrategyWidget />
+
       <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
         <Target className="text-blue-600" size={32} /> RM Action Center
       </h2>

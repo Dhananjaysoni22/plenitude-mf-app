@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { generateQuartileNotifications } from '../services/notification.service';
+import { generateQuartileNotifications, generateDrawdownNotifications } from '../services/notification.service';
 import { AuthRequest } from '../middlewares/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 import AppError from '../utils/AppError';
@@ -11,8 +11,9 @@ export const runNotificationEngine = asyncHandler(async (req: AuthRequest, res: 
   if (req.user?.role !== 'ADMIN') {
     throw new AppError('Only Admins can trigger the alert engine', 403);
   }
-  const count = await generateQuartileNotifications();
-  res.json({ message: `Successfully generated ${count} notifications.` });
+  const qCount = await generateQuartileNotifications();
+  const dCount = await generateDrawdownNotifications();
+  res.json({ message: `Successfully generated ${qCount} quartile alerts and ${dCount} drawdown alerts.` });
 });
 
 export const getMyNotifications = asyncHandler(async (req: AuthRequest, res: Response) => {

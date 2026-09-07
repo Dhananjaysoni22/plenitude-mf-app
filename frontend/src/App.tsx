@@ -10,6 +10,7 @@ import FundMappingView from './components/FundMappingView';
 import StaffManagement from './components/StaffManagement';
 import RmAnalyticsDashboard from './components/RmAnalyticsDashboard';
 import RmActionDashboard from './components/RmActionDashboard';
+import DrawdownStrategyView from './components/DrawdownStrategyView';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 
@@ -62,6 +63,7 @@ function App() {
             <Route path="/clients/:id" element={<ClientDetailView />} />
             <Route path="/research" element={<ResearchDataView />} />
             <Route path="/mapping" element={user?.role === 'ADMIN' ? <FundMappingView /> : <Navigate to="/" />} />
+            <Route path="/strategy" element={user?.role === 'ADMIN' ? <DrawdownStrategyView /> : <Navigate to="/" />} />
             {user?.role === 'ADMIN' && (
               <>
                 <Route path="/staff" element={<StaffManagement />} />
