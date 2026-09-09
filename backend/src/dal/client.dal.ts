@@ -2,9 +2,9 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-export const upsertClient = async (pan: string, updateData: any, createData: any) => {
+export const upsertClient = async (pan: string, name: string, updateData: any, createData: any) => {
   return prisma.client.upsert({
-    where: { pan },
+    where: { pan_name: { pan, name } },
     update: updateData,
     create: createData
   });

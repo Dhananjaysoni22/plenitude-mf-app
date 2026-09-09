@@ -72,7 +72,7 @@ export const processClientSheet = async (buffer: Buffer) => {
       overallAbsoluteReturn: keyAbsReturn ? parseCurrency(row[keyAbsReturn]) : null
     };
 
-    const clientRecord = await upsertClient(pan, parsedData, { ...parsedData, pan });
+    const clientRecord = await upsertClient(pan, clientName, parsedData, { ...parsedData, pan });
     await prisma.clientHistory.create({
       data: {
         clientId: clientRecord.id,
@@ -294,7 +294,7 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
           }
           
           if (!client) {
-             client = await upsertClient(pan, { name: clientName, rmId: rm.id }, { name: clientName, rmId: rm.id, pan });
+             client = await upsertClient(pan, clientName, { name: clientName, rmId: rm.id }, { name: clientName, rmId: rm.id, pan });
           }
           clientId = client.id;
 

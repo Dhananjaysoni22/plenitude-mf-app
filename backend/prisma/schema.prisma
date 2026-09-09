@@ -27,29 +27,31 @@ enum Role {
 }
 
 model Client {
-  id                  String    @id @default(uuid())
-  name                String
-  pan                 String    @unique
-  familyHead          String?
-  rmId                String
-  rm                  User      @relation(fields: [rmId], references: [id])
-  totalAum            Float     @default(0)
-  equityAum           Float     @default(0)
-  debtAum             Float     @default(0)
-  hybridAum           Float     @default(0)
-  totalUnits          Float?    @default(0)
-  totalInvested       Float?    @default(0)
-  totalGain           Float?    @default(0)
-  overallCagr         Float?
+  id                    String          @id @default(uuid())
+  name                  String
+  pan                   String
+  familyHead            String?
+  rmId                  String
+  rm                    User            @relation(fields: [rmId], references: [id])
+  totalAum              Float           @default(0)
+  equityAum             Float           @default(0)
+  debtAum               Float           @default(0)
+  hybridAum             Float           @default(0)
+  totalUnits            Float?          @default(0)
+  totalInvested         Float?          @default(0)
+  totalGain             Float?          @default(0)
+  overallCagr           Float?
   overallAbsoluteReturn Float?
-  lastPortfolioReview DateTime? @default(now())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  lastPortfolioReview   DateTime?       @default(now())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  holdings       ClientHolding[]
-  notifications  Notification[]
-  ClientHistory  ClientHistory[]
-  HoldingHistory HoldingHistory[]
+  holdings              ClientHolding[]
+  notifications         Notification[]
+  history               ClientHistory[]
+  HoldingHistory        HoldingHistory[]
+
+  @@unique([pan, name])
 }
 
 model ResearchFund {

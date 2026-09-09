@@ -9,7 +9,17 @@ export default function UploadDashboard() {
   const [fileHoldings, setFileHoldings] = useState<File | null>(null);
   const [bulkFiles, setBulkFiles] = useState<FileList | null>(null);
   const [bulkResults, setBulkResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  
+  const [loadingClient, setLoadingClient] = useState(false);
+  const [loadingResearch, setLoadingResearch] = useState(false);
+  const [loadingHoldings, setLoadingHoldings] = useState(false);
+  const [loadingBulk, setLoadingBulk] = useState(false);
+
+  const [progressClient, setProgressClient] = useState(0);
+  const [progressResearch, setProgressResearch] = useState(0);
+  const [progressHoldings, setProgressHoldings] = useState(0);
+  const [progressBulk, setProgressBulk] = useState(0);
+
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
   
   const [stats, setStats] = useState({ clientsCount: 0, rmsCount: 0, fundsCount: 0, holdingsCount: 0 });
@@ -34,9 +44,12 @@ export default function UploadDashboard() {
       for (let i = 0; i < bulkFiles.length; i++) {
         formData.append('files', bulkFiles[i]);
       }
-      setLoading(true);
+      setLoadingBulk(true);
+      setProgressBulk(0);
       setStatus({ type: 'idle', message: 'Uploading and processing bulk portfolios...' });
-      const response = await uploadBulkPortfolios(formData);
+      const response = await uploadBulkPortfolios(formData, (progressEvent: any) => {
+        if (progressEvent.total) setProgressBulk(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+      });
       setBulkResults(response.data.results);
       setStatus({ type: 'success', message: 'Bulk processing complete! Review the results below.' });
       fetchStats();
@@ -44,32 +57,38 @@ export default function UploadDashboard() {
       console.error(error);
       setStatus({ type: 'error', message: 'Failed to upload bulk portfolios.' });
     } finally {
-      setLoading(false);
+      setLoadingBulk(false);
     }
   };
 
   const handleUpload = async (endpoint: string) => {
     let file = null;
-    if (endpoint === 'clients') file = fileClient;
-    if (endpoint === 'research') file = fileResearch;
-    if (endpoint === 'holdings') file = fileHoldings;
+    let setLoadingFn = null;
+    let setProgressFn = null;
+
+    if (endpoint === 'clients') { file = fileClient; setLoadingFn = setLoadingClient; setProgressFn = setProgressClient; }
+    if (endpoint === 'research') { file = fileResearch; setLoadingFn = setLoadingResearch; setProgressFn = setProgressResearch; }
+    if (endpoint === 'holdings') { file = fileHoldings; setLoadingFn = setLoadingHoldings; setProgressFn = setProgressHoldings; }
     
-    if (!file) return;
+    if (!file || !setLoadingFn || !setProgressFn) return;
 
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      setLoading(true);
-      setStatus({ type: 'idle', message: 'Uploading and parsing into DB...' });
-      const response = await uploadFile(endpoint, formData);
+      setLoadingFn(true);
+      setProgressFn(0);
+      setStatus({ type: 'idle', message: `Uploading ${file.name}...` });
+      const response = await uploadFile(endpoint, formData, (progressEvent: any) => {
+        if (progressEvent.total) setProgressFn(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+      });
       setStatus({ type: 'success', message: `Inserted ${response.data.rowsInserted || 'records'} into DB successfully!` });
       fetchStats();
     } catch (error: any) {
       console.error(error);
       setStatus({ type: 'error', message: `Failed to upload ${file.name}.` });
     } finally {
-      setLoading(false);
+      setLoadingFn(false);
     }
   };
 
@@ -98,11 +117,11 @@ export default function UploadDashboard() {
           </label>
           <button 
             onClick={() => handleUpload('clients')}
-            disabled={!fileClient || loading}
+            disabled={!fileClient || loadingClient}
             className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {loading && <Activity className="animate-spin" size={18} />}
-            {loading ? 'Uploading...' : 'Upload Clients'}
+            {loadingClient && <Activity className="animate-spin" size={18} />}
+            {loadingClient ? `Uploading ${progressClient}%...` : 'Upload Clients'}
           </button>
         </div>
 
@@ -128,11 +147,11 @@ export default function UploadDashboard() {
           </label>
           <button 
             onClick={() => handleUpload('research')}
-            disabled={!fileResearch || loading}
+            disabled={!fileResearch || loadingResearch}
             className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {loading && <Activity className="animate-spin" size={18} />}
-            {loading ? 'Uploading...' : 'Upload Research'}
+            {loadingResearch && <Activity className="animate-spin" size={18} />}
+            {loadingResearch ? `Uploading ${progressResearch}%...` : 'Upload Research'}
           </button>
         </div>
 
@@ -158,11 +177,11 @@ export default function UploadDashboard() {
           </label>
           <button 
             onClick={() => handleUpload('holdings')}
-            disabled={!fileHoldings || loading}
+            disabled={!fileHoldings || loadingHoldings}
             className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {loading && <Activity className="animate-spin" size={18} />}
-            {loading ? 'Uploading...' : 'Upload Portfolios'}
+            {loadingHoldings && <Activity className="animate-spin" size={18} />}
+            {loadingHoldings ? `Uploading ${progressHoldings}%...` : 'Upload Portfolios'}
           </button>
         </div>
       </div>
@@ -205,11 +224,11 @@ export default function UploadDashboard() {
           
           <button 
             onClick={handleBulkUpload}
-            disabled={!bulkFiles || bulkFiles.length === 0 || loading}
+            disabled={!bulkFiles || bulkFiles.length === 0 || loadingBulk}
             className="mt-6 w-full md:w-auto px-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? <Activity className="animate-spin" size={20} /> : <FolderDown size={20} />}
-            {loading ? 'Processing Files...' : 'Run Bulk Sync'}
+            {loadingBulk ? <Activity className="animate-spin" size={20} /> : <FolderDown size={20} />}
+            {loadingBulk ? `Uploading ${progressBulk}%...` : 'Run Bulk Sync'}
           </button>
         </div>
       </div>
