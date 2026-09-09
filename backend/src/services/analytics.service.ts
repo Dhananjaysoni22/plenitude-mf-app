@@ -51,14 +51,14 @@ export const getFirmAnalyticsService = async () => {
         }
       });
 
-      if (client.ClientHistory && client.ClientHistory.length > 0) {
-        client.ClientHistory.forEach((h: any) => {
+      if (client.history && client.history.length > 0) {
+        client.history.forEach((h: any) => {
           const dateStr = h.date.toISOString().substring(0, 7);
           if (!monthlyHistoryMap[dateStr]) monthlyHistoryMap[dateStr] = 0;
           monthlyHistoryMap[dateStr] += h.totalAum || 0;
         });
 
-        const pastSnapshots = client.ClientHistory.filter((h: any) => h.date < thirtyDaysAgo);
+        const pastSnapshots = client.history.filter((h: any) => h.date < thirtyDaysAgo);
         if (pastSnapshots.length > 0) {
           const oldestRecent = pastSnapshots[pastSnapshots.length - 1];
           growth30Day += ((client.totalAum || 0) - (oldestRecent.totalAum || 0));

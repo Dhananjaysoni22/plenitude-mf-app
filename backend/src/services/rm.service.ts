@@ -29,8 +29,8 @@ export const getRmIntelligenceService = async (rmId: string) => {
       }
     });
 
-    if (client.ClientHistory && client.ClientHistory.length > 0) {
-      const pastSnapshots = client.ClientHistory.filter((h: any) => h.date < thirtyDaysAgo);
+    if (client.history && client.history.length > 0) {
+      const pastSnapshots = client.history.filter((h: any) => h.date < thirtyDaysAgo);
       if (pastSnapshots.length > 0) {
         const oldestRecent = pastSnapshots[pastSnapshots.length - 1];
         const growth = (client.totalAum || 0) - (oldestRecent.totalAum || 0);

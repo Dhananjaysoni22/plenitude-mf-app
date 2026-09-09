@@ -146,7 +146,7 @@ export default function RmActionDashboard() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text" 
-              placeholder="Search by Client or PAN..." 
+              placeholder="Search by Client, PAN, or risk (Q3, Q4, Drawdown)..." 
               value={searchQuery}
               onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -174,7 +174,8 @@ export default function RmActionDashboard() {
                     .filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true)
                     .filter((c: any) => 
                       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                      c.pan?.toLowerCase().includes(searchQuery.toLowerCase())
+                      c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))
                     )
                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     .map((client: any, idx: number) => (
@@ -222,13 +223,13 @@ export default function RmActionDashboard() {
             </div>
             
             <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase())).length / itemsPerPage)}
-              totalItems={data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase())).length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(num) => { setItemsPerPage(num); setCurrentPage(1); }}
-            />
+                currentPage={currentPage}
+                totalPages={Math.ceil(data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) || c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))).length / itemsPerPage)}
+                totalItems={data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) || c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))).length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(num) => { setItemsPerPage(num); setCurrentPage(1); }}
+              />
           </>
         )}
       </div>

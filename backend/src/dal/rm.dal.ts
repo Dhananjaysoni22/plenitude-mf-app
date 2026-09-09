@@ -7,7 +7,7 @@ export const getRmClientsDal = async (rmId: string) => {
     include: {
       holdings: { include: { researchFund: true } },
       notifications: { where: { status: 'PENDING' } },
-      ClientHistory: { orderBy: { date: 'asc' } }
+      history: { orderBy: { date: 'asc' } }
     }
   });
 };

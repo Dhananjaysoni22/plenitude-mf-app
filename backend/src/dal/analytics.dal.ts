@@ -16,7 +16,7 @@ export const getRmsWithAnalyticsDataDal = async () => {
       clients: {
         include: {
           holdings: { include: { researchFund: true } },
-          ClientHistory: { orderBy: { date: 'asc' } }
+          history: { orderBy: { date: 'asc' } }
         }
       },
       notifications: true
