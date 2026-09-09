@@ -9,10 +9,10 @@ export const createDefaultSettingsDal = async (days: number) => {
   return prisma.systemSettings.create({ data: { id: 'default', reviewThresholdDays: days } });
 };
 
-export const upsertSystemSettingsDal = async (days: number) => {
+export const upsertSystemSettingsDal = async (updates: any) => {
   return prisma.systemSettings.upsert({
     where: { id: 'default' },
-    update: { reviewThresholdDays: days },
-    create: { id: 'default', reviewThresholdDays: days }
+    update: updates,
+    create: { id: 'default', ...updates }
   });
 };

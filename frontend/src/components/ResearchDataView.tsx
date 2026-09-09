@@ -69,19 +69,19 @@ export default function ResearchDataView() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-gray-100 border-y border-gray-200">
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
                     Fund Name
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
                     Category
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-right">
                     Fund AUM
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
                     Quartile
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
                     Priority
                   </th>
                 </tr>
@@ -110,18 +110,18 @@ export default function ResearchDataView() {
                       className="border-b border-gray-100 hover:bg-gray-50"
                     >
                       <td
-                        className="py-3 px-4 text-gray-800 font-medium max-w-md truncate"
+                        className="py-1.5 px-2 text-gray-800 font-medium max-w-md truncate"
                         title={fund.name}
                       >
                         {fund.name}
                       </td>
-                      <td className="py-3 px-4 text-gray-600">
+                      <td className="py-1.5 px-2 text-gray-600">
                         {fund.category || "-"}
                       </td>
-                      <td className="py-3 px-4 text-gray-700 text-right font-medium">
+                      <td className="py-1.5 px-2 text-gray-700 text-right font-medium">
                         {fund.aum ? "₹" + fund.aum.toLocaleString() : "-"}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-1.5 px-2 text-center">
                         <span
                           className={
                             "px-2 py-1 rounded-full text-xs font-semibold " +
@@ -131,7 +131,7 @@ export default function ResearchDataView() {
                           {fund.quartile || "Unrated"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center font-bold text-gray-700">
+                      <td className="py-1.5 px-2 text-center font-bold text-gray-700">
                         {fund.selectionPriority || "-"}
                       </td>
                     </tr>

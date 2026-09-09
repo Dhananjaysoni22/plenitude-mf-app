@@ -105,7 +105,7 @@ export default function FundMappingView() {
         <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-3" />
           <p className="text-gray-800 font-semibold">No schemes found!</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Upload a client portfolio to begin mapping.
           </p>
         </div>
@@ -115,19 +115,19 @@ export default function FundMappingView() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-gray-100 border-y border-gray-200">
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     Scheme Name (from Portfolio)
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-center">
                     Holdings
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     AI Suggestion
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     Map to Research Fund
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-center">
                     Action
                   </th>
                 </tr>
@@ -138,21 +138,21 @@ export default function FundMappingView() {
                     key={item.fundNameRaw}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="py-3 px-4 text-gray-800 font-medium">
+                    <td className="py-1.5 px-2 text-gray-800 font-medium">
                       {item.fundNameRaw}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold">
                         {item.count}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-1.5 px-2">
                       {item.suggestedFundName ? (
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-semibold text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-md w-fit">
                             <Sparkles size={12} /> {item.confidenceScore}% Match
                           </span>
-                          <span className="text-sm text-gray-600 font-medium leading-tight">
+                          <span className="text-xs text-gray-600 font-medium leading-tight">
                             {item.suggestedFundName}
                           </span>
                           <button
@@ -173,9 +173,9 @@ export default function FundMappingView() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-1.5 px-2">
                       <Select
-                        className="w-full text-sm min-w-[250px]"
+                        className="w-full text-xs min-w-[250px]"
                         options={selectOptions}
                         value={
                           selectOptions.find(
@@ -195,11 +195,11 @@ export default function FundMappingView() {
                         isClearable
                       />
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       {success[item.fundNameRaw] ? (
                         <button
                           onClick={() => setSuccess({ ...success, [item.fundNameRaw]: false })}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-4 rounded transition-colors text-sm whitespace-nowrap shadow-sm border border-gray-300"
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-4 rounded transition-colors text-xs whitespace-nowrap shadow-sm border border-gray-300"
                         >
                           Edit
                         </button>
@@ -210,7 +210,7 @@ export default function FundMappingView() {
                             !mappings[item.fundNameRaw] ||
                             saving[item.fundNameRaw]
                           }
-                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-1.5 px-4 rounded transition-colors text-sm whitespace-nowrap shadow-sm"
+                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-1.5 px-4 rounded transition-colors text-xs whitespace-nowrap shadow-sm"
                         >
                           {saving[item.fundNameRaw] ? "Saving..." : "Approve"}
                         </button>

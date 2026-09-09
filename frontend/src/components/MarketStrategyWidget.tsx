@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingDown, Activity, AlertTriangle } from 'lucide-react';
-import axiosClient from '../api/axiosClient';
+import { getDrawdownData } from '../api/data.api';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 
 export const MarketStrategyWidget = () => {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    axiosClient.get('/data/drawdown').then(res => {
+    getDrawdownData().then(res => {
       setData(res.data);
     });
   }, []);

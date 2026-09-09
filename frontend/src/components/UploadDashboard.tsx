@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle, AlertCircle, Database, Users, BarChart2, FolderDown, Activity } from 'lucide-react';
 import { uploadFile, uploadBulkPortfolios } from '../api/upload.api';
-import axiosClient from '../api/axiosClient';
+import { getStats } from '../api/data.api';
 
 export default function UploadDashboard() {
   const [fileClient, setFileClient] = useState<File | null>(null);
@@ -16,7 +16,7 @@ export default function UploadDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await axiosClient.get('/data/stats');
+      const response = await getStats();
       setStats(response.data);
     } catch (e) {
       console.error(e);
@@ -29,16 +29,14 @@ export default function UploadDashboard() {
 
   const handleBulkUpload = async () => {
     if (!bulkFiles || bulkFiles.length === 0) return;
-    const formData = new FormData();
-    for (let i = 0; i < bulkFiles.length; i++) {
-      formData.append('files', bulkFiles[i]);
-    }
     try {
+      const formData = new FormData();
+      for (let i = 0; i < bulkFiles.length; i++) {
+        formData.append('files', bulkFiles[i]);
+      }
       setLoading(true);
       setStatus({ type: 'idle', message: 'Uploading and processing bulk portfolios...' });
-      const response = await axiosClient.post('/upload/portfolios/bulk', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await uploadBulkPortfolios(formData);
       setBulkResults(response.data.results);
       setStatus({ type: 'success', message: 'Bulk processing complete! Review the results below.' });
       fetchStats();
@@ -62,10 +60,9 @@ export default function UploadDashboard() {
     formData.append('file', file);
 
     try {
+      setLoading(true);
       setStatus({ type: 'idle', message: 'Uploading and parsing into DB...' });
-      const response = await axiosClient.post(`/upload/${endpoint}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await uploadFile(endpoint, formData);
       setStatus({ type: 'success', message: `Inserted ${response.data.rowsInserted || 'records'} into DB successfully!` });
       fetchStats();
     } catch (error: any) {
@@ -102,8 +99,9 @@ export default function UploadDashboard() {
           <button 
             onClick={() => handleUpload('clients')}
             disabled={!fileClient || loading}
-            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors"
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
+            {loading && <Activity className="animate-spin" size={18} />}
             {loading ? 'Uploading...' : 'Upload Clients'}
           </button>
         </div>
@@ -131,8 +129,9 @@ export default function UploadDashboard() {
           <button 
             onClick={() => handleUpload('research')}
             disabled={!fileResearch || loading}
-            className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors"
+            className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
+            {loading && <Activity className="animate-spin" size={18} />}
             {loading ? 'Uploading...' : 'Upload Research'}
           </button>
         </div>
@@ -160,8 +159,9 @@ export default function UploadDashboard() {
           <button 
             onClick={() => handleUpload('holdings')}
             disabled={!fileHoldings || loading}
-            className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors"
+            className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
+            {loading && <Activity className="animate-spin" size={18} />}
             {loading ? 'Uploading...' : 'Upload Portfolios'}
           </button>
         </div>

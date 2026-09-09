@@ -13,10 +13,11 @@ export const updateSettings = asyncHandler(async (req: AuthRequest, res: Respons
   if (req.user?.role !== 'ADMIN') {
     throw new AppError('Only Admins can update system settings', 403);
   }
-  const { reviewThresholdDays } = req.body;
-  if (reviewThresholdDays === undefined) {
-    throw new AppError('reviewThresholdDays is required', 400);
-  }
-  const settings = await updateSystemSettingsService(Number(reviewThresholdDays));
+  const { reviewThresholdDays, rmCanViewClients } = req.body;
+  const updates: any = {};
+  if (reviewThresholdDays !== undefined) updates.reviewThresholdDays = Number(reviewThresholdDays);
+  if (rmCanViewClients !== undefined) updates.rmCanViewClients = Boolean(rmCanViewClients);
+
+  const settings = await updateSystemSettingsService(updates);
   res.json(settings);
 });

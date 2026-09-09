@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { generateQuartileNotifications, generateDrawdownNotifications } from '../services/notification.service';
 import { AuthRequest } from '../middlewares/auth';
 import { asyncHandler } from '../utils/asyncHandler';
-import AppError from '../utils/AppError';
+import { AppError } from '../utils/AppError';
 
 const prisma = new PrismaClient();
 
@@ -54,7 +54,12 @@ export const resolveNotification = asyncHandler(async (req: AuthRequest, res: Re
   const user = req.user;
   if (!user) throw new AppError('Unauthorized', 401);
 
-  const { id } = req.params;
+  const id = req.params.id as string;
+  const { resolutionNote } = req.body;
+
+  if (!resolutionNote || resolutionNote.trim() === '') {
+    throw new AppError('Resolution note is required to resolve an alert', 400);
+  }
 
   const notif = await prisma.notification.findUnique({ where: { id } });
   if (!notif) {
@@ -69,6 +74,7 @@ export const resolveNotification = asyncHandler(async (req: AuthRequest, res: Re
     where: { id },
     data: {
       status: 'RESOLVED',
+      resolutionNote,
       resolvedAt: new Date()
     }
   });

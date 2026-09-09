@@ -13,8 +13,9 @@ import {
   Trash2,
   X,
   CheckCircle,
-  Shield,
   Key,
+  Sparkle,
+  UserRoundCog,
 } from "lucide-react";
 import Pagination from "./Pagination";
 
@@ -130,7 +131,7 @@ export default function StaffManagement() {
     <div className="w-full max-w-[98%] mx-auto mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Shield className="text-indigo-600" /> Staff & Team Management
+          <UserRoundCog className="text-indigo-600" /> Staff & Team Management
         </h2>
 
         <div className="flex items-center gap-4">
@@ -163,19 +164,19 @@ export default function StaffManagement() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-gray-100 border-y border-gray-200">
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
                     Name
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
                     Email
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
                     Role
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
                     Clients Assigned
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
                     Actions
                   </th>
                 </tr>
@@ -186,7 +187,7 @@ export default function StaffManagement() {
                     key={staff.id}
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-3 px-4 text-gray-800 font-medium">
+                    <td className="py-1.5 px-2 text-gray-800 font-medium">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
                           {staff.name.charAt(0).toUpperCase()}
@@ -194,15 +195,15 @@ export default function StaffManagement() {
                         {staff.name}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">{staff.email}</td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1.5 px-2 text-gray-600">{staff.email}</td>
+                    <td className="py-1.5 px-2 text-center">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${staff.role === "ADMIN" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}
                       >
                         {staff.role}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-gray-800 font-bold">
                           {staff._count?.clients || 0}
@@ -217,7 +218,7 @@ export default function StaffManagement() {
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() =>

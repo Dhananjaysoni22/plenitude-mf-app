@@ -116,6 +116,7 @@ model Notification {
   type       String // e.g., "Q3_ALERT", "Q4_ALERT"
   isRead     Boolean   @default(false)
   status     String    @default("PENDING") // PENDING, RESOLVED, ESCALATED
+  resolutionNote String? // Notes written by RM when resolving
   resolvedAt DateTime?
   createdAt  DateTime  @default(now())
 }
@@ -168,6 +169,7 @@ model SystemSettings {
   id                  String   @id @default("default")
   reviewThresholdDays Int      @default(45)
   currentDrawdown     Float    @default(0)
+  rmCanViewClients    Boolean  @default(true) // Feature Flag
   updatedAt           DateTime @updatedAt
 }
 

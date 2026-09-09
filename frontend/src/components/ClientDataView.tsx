@@ -67,31 +67,31 @@ export default function ClientDataView() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-gray-100 border-y border-gray-200">
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     Client Name
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     PAN
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     Family Head
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                     Relationship Manager
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                     Total AUM
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                     Equity AUM
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                     Debt AUM
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                     Hybrid AUM
                   </th>
-                  <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                     Units
                   </th>
                 </tr>
@@ -104,29 +104,29 @@ export default function ClientDataView() {
                     title="Double click to view portfolio"
                     className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-4 text-gray-800 font-medium">
+                    <td className="py-1.5 px-2 text-gray-800 font-medium">
                       {client.name}
                     </td>
-                    <td className="py-3 px-4 text-gray-500">{client.pan}</td>
-                    <td className="py-3 px-4 text-gray-500">
+                    <td className="py-1.5 px-2 text-gray-500">{client.pan}</td>
+                    <td className="py-1.5 px-2 text-gray-500">
                       {client.familyHead || "-"}
                     </td>
-                    <td className="py-3 px-4 text-blue-600 font-medium">
+                    <td className="py-1.5 px-2 text-blue-600 font-medium">
                       {client.rm?.name}
                     </td>
-                    <td className="py-3 px-4 text-gray-700 text-right font-medium">
+                    <td className="py-1.5 px-2 text-gray-700 text-right font-medium">
                       ₹{client.totalAum.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-right">
+                    <td className="py-1.5 px-2 text-gray-600 text-right">
                       ₹{client.equityAum.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-right">
+                    <td className="py-1.5 px-2 text-gray-600 text-right">
                       ₹{client.debtAum.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-right">
+                    <td className="py-1.5 px-2 text-gray-600 text-right">
                       ₹{client.hybridAum?.toLocaleString() || 0}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-right">
+                    <td className="py-1.5 px-2 text-gray-600 text-right">
                       {client.totalUnits
                         ? client.totalUnits.toLocaleString()
                         : "-"}

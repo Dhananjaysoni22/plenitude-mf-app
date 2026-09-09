@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middlewares/auth';
 import { asyncHandler } from '../utils/asyncHandler';
-import AppError from '../utils/AppError';
+import { AppError } from '../utils/AppError';
 
 const prisma = new PrismaClient();
 
@@ -71,7 +71,7 @@ export const updateStaff = asyncHandler(async (req: AuthRequest, res: Response) 
     throw new AppError('Only Admins can update staff', 403);
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { name, email, role } = req.body;
 
   if (!name || !email || !role) {
@@ -93,7 +93,7 @@ export const deleteStaff = asyncHandler(async (req: AuthRequest, res: Response) 
     throw new AppError('Only Admins can delete staff', 403);
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   if (id === req.user.id) {
     throw new AppError('You cannot delete your own account', 400);
@@ -113,7 +113,7 @@ export const resetPassword = asyncHandler(async (req: AuthRequest, res: Response
     throw new AppError('Only Admins can reset passwords', 403);
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
   const hash = await bcrypt.hash('0000', 10);
   
   await prisma.user.update({

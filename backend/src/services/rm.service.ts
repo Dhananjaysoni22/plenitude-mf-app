@@ -53,17 +53,19 @@ export const getRmIntelligenceService = async (rmId: string) => {
       daysSinceReview = thresholdDays;
     }
     
-    if (isOverExposed || client.notifications.length > 0 || isOverdue) {
-      callList.push({
-        clientId: client.id,
-        name: client.name,
-        equityRatio: equityRatio * 100,
-        alerts: client.notifications.length,
-        isOverExposed,
-        isOverdue,
-        daysSinceReview
-      });
-    }
+    callList.push({
+      clientId: client.id,
+      name: client.name,
+      pan: client.pan,
+      equityAum: client.equityAum,
+      totalAum: client.totalAum,
+      equityRatio: equityRatio * 100,
+      alerts: client.notifications.length,
+      alertTypes: Array.from(new Set(client.notifications.map((n: any) => n.type))),
+      isOverExposed,
+      isOverdue,
+      daysSinceReview
+    });
   });
 
   clientGrowth.sort((a, b) => a.growth - b.growth);

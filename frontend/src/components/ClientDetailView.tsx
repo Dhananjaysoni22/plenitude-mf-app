@@ -24,7 +24,12 @@ import {
 } from "recharts";
 import Pagination from "./Pagination";
 
-export default function ClientDetailView() {
+interface Props {
+  user?: any;
+  rmCanViewClients?: boolean;
+}
+
+export default function ClientDetailView({ user, rmCanViewClients = true }: Props) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<any>(null);
@@ -94,10 +99,10 @@ export default function ClientDetailView() {
     <div className="w-full max-w-[98%] mx-auto mt-8">
       <div className="flex justify-between items-center mb-6">
         <button
-          onClick={() => navigate("/clients")}
+          onClick={() => navigate((user?.role === 'ADMIN' || rmCanViewClients) ? "/clients" : "/")}
           className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-medium"
         >
-          <ArrowLeft size={18} /> Back to Clients
+          <ArrowLeft size={18} /> {(user?.role === 'ADMIN' || rmCanViewClients) ? "Back to Clients" : "Back to Action Center"}
         </button>
         <button
           onClick={handleMarkReviewed}
@@ -114,7 +119,7 @@ export default function ClientDetailView() {
           <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <User className="text-blue-600" size={32} /> {client.name}
           </h2>
-          <div className="mt-2 text-gray-500 flex items-center gap-4 text-sm font-medium">
+          <div className="mt-2 text-gray-500 flex items-center gap-4 text-xs font-medium">
             <span>PAN: {client.pan}</span>
             {client.familyHead && (
               <span>• Family Head: {client.familyHead}</span>
@@ -124,7 +129,7 @@ export default function ClientDetailView() {
         </div>
 
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 min-w-[200px] text-right">
-          <p className="text-blue-800 text-sm font-bold uppercase tracking-wider mb-1">
+          <p className="text-blue-800 text-xs font-bold uppercase tracking-wider mb-1">
             Total AUM
           </p>
           <p className="text-3xl font-extrabold text-blue-900">
@@ -135,7 +140,7 @@ export default function ClientDetailView() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">
             Invested Amount
           </p>
           <p className="text-xl font-bold text-gray-800">
@@ -145,7 +150,7 @@ export default function ClientDetailView() {
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">
             Total Gain
           </p>
           <p
@@ -159,7 +164,7 @@ export default function ClientDetailView() {
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">
             Overall CAGR
           </p>
           <p
@@ -169,7 +174,7 @@ export default function ClientDetailView() {
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">
             Absolute Return
           </p>
           <p
@@ -250,37 +255,40 @@ export default function ClientDetailView() {
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 z-10 shadow-sm">
                   <tr className="bg-gray-100 border-y border-gray-200">
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                       Scheme Name
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs">
                       Folio
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
+                      Units
+                    </th>
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Invested
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Pur. NAV
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Cur. NAV
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Current Value
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Gain
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       CAGR
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-right">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-right">
                       Days
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-center">
                       Quartile
                     </th>
-                    <th className="bg-gray-100 py-3 px-4 font-semibold text-gray-600 text-sm text-center">
+                    <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-xs text-center">
                       Alerts
                     </th>
                   </tr>
@@ -325,7 +333,7 @@ export default function ClientDetailView() {
                         key={holding.id}
                         className="border-b border-gray-100 hover:bg-gray-50"
                       >
-                        <td className="py-3 px-4 text-gray-800 font-medium">
+                        <td className="py-1.5 px-2 text-gray-800 font-medium">
                           {holding.fundNameRaw}
                           {!rf && (
                             <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
@@ -333,23 +341,26 @@ export default function ClientDetailView() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-gray-500 text-sm">
-                          {holding.folioNumber || "-"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-gray-600">
-                          ₹{holding.investedAmount?.toLocaleString() || "-"}
-                        </td>
-                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                          <td className="py-1.5 px-2 text-gray-500 text-xs">
+                            {holding.folioNumber || "-"}
+                          </td>
+                          <td className="py-1.5 px-2 text-right text-gray-600">
+                            {holding.units?.toLocaleString() || "-"}
+                          </td>
+                          <td className="py-1.5 px-2 text-right text-gray-600">
+                            ₹{holding.investedAmount?.toLocaleString() || "-"}
+                          </td>
+                        <td className="py-1.5 px-2 text-right text-gray-500 text-xs">
                           {holding.purchaseNav ? '₹' + holding.purchaseNav.toLocaleString() : "-"}
                         </td>
-                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                        <td className="py-1.5 px-2 text-right text-gray-500 text-xs">
                           {holding.currentNav ? '₹' + holding.currentNav.toLocaleString() : "-"}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-gray-800">
+                        <td className="py-1.5 px-2 text-right font-medium text-gray-800">
                           ₹{holding.currentValue?.toLocaleString() || "-"}
                         </td>
                         <td
-                          className={`py-3 px-4 text-right font-medium ${holding.gain > 0 ? "text-green-600" : "text-gray-600"}`}
+                          className={`py-1.5 px-2 text-right font-medium ${holding.gain > 0 ? "text-green-600" : "text-gray-600"}`}
                         >
                           {holding.gain
                             ? (holding.gain > 0 ? "+" : "") +
@@ -357,13 +368,13 @@ export default function ClientDetailView() {
                               holding.gain.toLocaleString()
                             : "-"}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-emerald-600">
+                        <td className="py-1.5 px-2 text-right font-medium text-emerald-600">
                           {holding.cagr ? holding.cagr + "%" : "-"}
                         </td>
-                        <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                        <td className="py-1.5 px-2 text-right text-gray-500 text-xs">
                           {holding.holdingDays ? holding.holdingDays.toLocaleString() : "-"}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-1.5 px-2 text-center">
                           {rf ? (
                             <span
                               className={
@@ -374,10 +385,10 @@ export default function ClientDetailView() {
                               {rf.quartile || "Unrated"}
                             </span>
                           ) : (
-                            <span className="text-gray-400 text-sm">-</span>
+                            <span className="text-gray-400 text-xs">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-center flex justify-center">
+                        <td className="py-1.5 px-2 text-center flex justify-center">
                           {alert || <span className="text-gray-400">-</span>}
                         </td>
                       </tr>

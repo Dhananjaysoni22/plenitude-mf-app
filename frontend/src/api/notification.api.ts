@@ -8,6 +8,6 @@ export const triggerAlertEngine = () => {
   return axiosClient.post('/notifications/trigger');
 };
 
-export const resolveNotification = (id: string) => {
-  return axiosClient.put(`/notifications/${id}/resolve`);
+export const resolveNotification = (id: string, resolutionNote: string) => {
+  return axiosClient.put(`/notifications/${id}/resolve`, { resolutionNote });
 };

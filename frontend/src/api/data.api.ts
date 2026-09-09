@@ -34,3 +34,4 @@ export const mapFund = (data: { fundNameRaw: string; researchFundId: string }) =
 
 export const getSystemSettings = () => axiosClient.get('/data/settings');
 export const updateSystemSettings = (data: any) => axiosClient.put('/data/settings', data);
+export const getDrawdownData = () => axiosClient.get('/data/drawdown');

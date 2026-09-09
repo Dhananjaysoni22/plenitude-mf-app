@@ -8,6 +8,6 @@ export const getSystemSettingsService = async () => {
   return settings;
 };
 
-export const updateSystemSettingsService = async (days: number) => {
-  return upsertSystemSettingsDal(days);
+export const updateSystemSettingsService = async (updates: any) => {
+  return upsertSystemSettingsDal(updates);
 };

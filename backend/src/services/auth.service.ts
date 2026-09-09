@@ -27,3 +27,22 @@ export const loginUser = async (email: string, passwordRaw: string) => {
 
   return { token, user: { id: user.id, name: user.name, role: user.role, email: user.email } };
 };
+
+export const changePassword = async (userId: string, currentPasswordRaw: string, newPasswordRaw: string) => {
+  const { findUserById, updateUserPassword } = require('../dal/user.dal');
+  const user = await findUserById(userId);
+  if (!user) throw new AppError('User not found', 404);
+
+  let valid = false;
+  if (user.passwordHash === 'defaultpassword' && currentPasswordRaw === 'defaultpassword') {
+    valid = true;
+  } else {
+    valid = await bcrypt.compare(currentPasswordRaw, user.passwordHash);
+  }
+
+  if (!valid) throw new AppError('Incorrect current password', 401);
+
+  const hashedNewPassword = await bcrypt.hash(newPasswordRaw, 10);
+  await updateUserPassword(userId, hashedNewPassword);
+  return { message: 'Password updated successfully' };
+};

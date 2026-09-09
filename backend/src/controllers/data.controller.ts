@@ -23,7 +23,7 @@ export const getClients = asyncHandler(async (req: AuthRequest, res: Response) =
 
 export const getClientById = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError('Unauthorized', 401);
-  const client = await fetchClientDetails(req.params.id, req.user);
+  const client = await fetchClientDetails(req.params.id as string, req.user);
   res.json(client);
 });
 
@@ -33,7 +33,7 @@ export const getClientHistory = asyncHandler(async (req: AuthRequest, res: Respo
   // I will just add the import via a separate instruction if it fails, but I can use require directly or just add it to import list.
   // Wait, I must add it to the import list at the top of data.controller.ts!
   const { fetchClientHistory } = require('../services/data.service');
-  const history = await fetchClientHistory(req.params.id, req.user);
+  const history = await fetchClientHistory(req.params.id as string, req.user);
   res.json(history);
 });
 

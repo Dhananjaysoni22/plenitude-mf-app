@@ -4,11 +4,17 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// This cron job will run every day at 1:00 AM
-// "0 1 * * *"
+// This cron job will run every 3 hours
+// "0 */3 * * *"
 export const initCronJobs = () => {
-  cron.schedule('0 1 * * *', async () => {
-    console.log('Running daily Drawdown scrape job...');
+  console.log('Initializing cron jobs. Running an immediate drawdown scrape...');
+  
+  // Run once immediately on server startup to catch up
+  runDrawdownScrape();
+
+  // Then schedule to run every 3 hours
+  cron.schedule('0 */3 * * *', async () => {
+    console.log('Running 3-hourly Drawdown scrape job...');
     await runDrawdownScrape();
   });
 };

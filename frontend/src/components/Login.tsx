@@ -3,8 +3,8 @@ import { login } from '../api/auth.api';
 import { LogIn } from 'lucide-react';
 
 export default function Login({ onLogin }: { onLogin: (token: string, user: any) => void }) {
-  const [email, setEmail] = useState('admin@plenitude.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +37,7 @@ export default function Login({ onLogin }: { onLogin: (token: string, user: any)
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="admin@plenitude.com"
+              placeholder="you@company.com"
               required
             />
           </div>
@@ -48,7 +48,7 @@ export default function Login({ onLogin }: { onLogin: (token: string, user: any)
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="admin123"
+              placeholder="••••••••"
               required
             />
           </div>
@@ -58,8 +58,7 @@ export default function Login({ onLogin }: { onLogin: (token: string, user: any)
         </form>
 
         <div className="mt-6 text-sm text-gray-500 text-center">
-          <p>For Demo: Admin uses <b>admin@plenitude.com / admin123</b></p>
-          <p>RM uses <b>name@plenitude.com / defaultpassword</b></p>
+          <p>Authorized personnel only.</p>
         </div>
       </div>
     </div>

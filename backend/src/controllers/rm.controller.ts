@@ -13,6 +13,6 @@ export const getRmIntelligence = asyncHandler(async (req: AuthRequest, res: Resp
 });
 
 export const markReviewed = asyncHandler(async (req: AuthRequest, res: Response) => {
-  await markClientReviewedService(req.params.id);
+  await markClientReviewedService(req.params.id as string);
   res.json({ success: true });
 });

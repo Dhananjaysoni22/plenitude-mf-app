@@ -10,6 +10,32 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Auto-seed default admin if database is empty
+const seedAdmin = async () => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const bcrypt = require('bcryptjs');
+    const prisma = new PrismaClient();
+    const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+    if (adminCount === 0) {
+      console.log('No ADMIN found. Seeding default admin account...');
+      const passwordHash = await bcrypt.hash('admin123', 10);
+      await prisma.user.create({
+        data: {
+          name: 'System Admin',
+          email: 'admin@plenitude.com',
+          passwordHash,
+          role: 'ADMIN'
+        }
+      });
+      console.log('Default admin seeded: admin@plenitude.com / admin123');
+    }
+  } catch (err) {
+    console.error('Failed to run auto-seed script:', err);
+  }
+};
+seedAdmin();
+
 app.use(cors());
 app.use(express.json());
 
