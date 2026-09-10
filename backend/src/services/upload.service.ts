@@ -286,7 +286,12 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
 
           let client = null;
           if (!pan.startsWith('UNKNOWN_')) {
-             client = await prisma.client.findUnique({ where: { pan } });
+             client = await prisma.client.findFirst({ 
+               where: { 
+                 pan,
+                 name: { equals: clientName, mode: 'insensitive' }
+               } 
+             });
           }
           
           if (!client) {

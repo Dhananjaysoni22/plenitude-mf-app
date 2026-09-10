@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.DS_Store
+
+# AI and Editor folders
+.agents/
+.claude/
+.windsurf/
+.vscode/
+.idea/
+.gemini/
