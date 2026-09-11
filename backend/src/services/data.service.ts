@@ -1,14 +1,14 @@
 import { getAllClients, getClientsByRm, getClientDetails } from '../dal/client.dal';
-import { getAllResearchFunds } from '../dal/research.dal';
+import { getAllResearchFunds, getRawResearchFunds } from '../dal/research.dal';
 import { getUnmappedHoldingsGrouped, updateHoldingsMapping, getDatabaseStats, upsertMappingRule } from '../dal/holding.dal';
 import { AppError } from '../utils/AppError';
 import { PrismaClient } from '@prisma/client';
 import { diceCoefficient } from '../utils/similarity';
 const prisma = new PrismaClient();
 
-export const fetchClients = async (user: any) => {
-  if (user.role === 'ADMIN') return getAllClients();
-  return getClientsByRm(user.id);
+export const fetchClients = async (user: any, page: number = 1, limit: number = 100, search: string = '', sortField: string = '', sortDir: string = 'asc') => {
+  if (user.role === 'ADMIN') return getAllClients(page, limit, search, sortField, sortDir);
+  return getClientsByRm(user.id, page, limit, search, sortField, sortDir);
 };
 
 export const fetchClientDetails = async (clientId: string, user: any) => {
@@ -22,8 +22,8 @@ export const fetchClientDetails = async (clientId: string, user: any) => {
   return client;
 };
 
-export const fetchResearchFunds = async () => {
-  return getAllResearchFunds();
+export const fetchResearchFunds = async (page: number = 1, limit: number = 100, search: string = '', sortField: string = 'name', sortDir: string = 'asc') => {
+  return getAllResearchFunds(page, limit, search, sortField, sortDir);
 };
 
 export const fetchClientHistory = async (clientId: string, user: any) => {
@@ -45,7 +45,7 @@ export const fetchUnmappedFunds = async (user: any) => {
   if (user.role !== 'ADMIN') throw new AppError('Only admins can view unmapped funds', 403);
   
   const grouped = await getUnmappedHoldingsGrouped();
-  const researchFunds = await getAllResearchFunds();
+  const researchFunds = await getRawResearchFunds();
   
   const results = [];
   for (const g of grouped) {

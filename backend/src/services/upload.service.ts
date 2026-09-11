@@ -107,6 +107,7 @@ export const processResearchSheet = async (buffer: Buffer) => {
     const keyAum = keys.find(k => k.toLowerCase() === 'aum');
     const keyQuartile = keys.find(k => k.toLowerCase().includes('quartile'));
     const keyPriority = keys.find(k => k.toLowerCase().includes('priority'));
+    const keyGlobalRank = keys.find(k => k.toLowerCase() === 'global_rank' || k.toLowerCase().includes('global rank'));
 
     if (!keyName || !row[keyName]) continue;
 
@@ -118,6 +119,7 @@ export const processResearchSheet = async (buffer: Buffer) => {
       aum: keyAum ? parseFloat(row[keyAum]) || 0 : null,
       quartile: keyQuartile ? String(row[keyQuartile]) : null,
       selectionPriority: keyPriority ? parseInt(row[keyPriority]) || null : null,
+      globalRank: keyGlobalRank ? parseInt(row[keyGlobalRank]) || null : null,
     };
 
     await upsertResearchFund(fundName, parsedData, { ...parsedData, name: fundName });

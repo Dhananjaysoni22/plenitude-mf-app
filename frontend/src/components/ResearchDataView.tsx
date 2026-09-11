@@ -5,34 +5,52 @@ import Pagination from "./Pagination";
 
 export default function ResearchDataView() {
   const [funds, setFunds] = useState<any[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
   const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState("name");
+  const [sortDir, setSortDir] = useState("asc");
 
-  useEffect(() => {
-    getResearchFunds()
+  const loadData = () => {
+    setLoading(true);
+    getResearchFunds(currentPage, itemsPerPage, search, sortField, sortDir)
       .then((res) => {
-        setFunds(res.data);
+        setFunds(res.data.data || res.data);
+        setTotalItems(res.data.total || res.data.length || 0);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  };
 
-  const filteredFunds = funds.filter(
-    (f) =>
-      f.name?.toLowerCase().includes(search.toLowerCase()) ||
-      f.category?.toLowerCase().includes(search.toLowerCase()),
-  );
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      loadData();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [currentPage, itemsPerPage, search, sortField, sortDir]);
 
-  const totalPages = Math.ceil(filteredFunds.length / itemsPerPage);
-  const currentData = filteredFunds.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentData = funds;
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-400 opacity-50">↕</span>;
+    return <span className="ml-1 text-purple-600 font-bold">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
 
   return (
     <div className="w-full max-w-[98%] mx-auto mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -49,7 +67,7 @@ export default function ResearchDataView() {
           <input
             type="text"
             placeholder="Search funds or categories..."
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none"
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none w-72 text-sm"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -59,88 +77,106 @@ export default function ResearchDataView() {
         </div>
       </div>
 
-      {loading ? (
-        <p className="text-gray-500 text-center py-10">
-          Loading research funds...
-        </p>
+      {loading && currentData.length === 0 ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
       ) : (
-        <div className="flex flex-col">
-          <div className="overflow-auto h-[calc(100vh-280px)]">
+        <>
+          <div className="overflow-auto h-[calc(100vh-280px)] border border-gray-200 rounded-lg">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-gray-100 border-y border-gray-200">
-                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
-                    Fund Name
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('name')}
+                  >
+                    Fund Name <SortIcon field="name" />
                   </th>
-                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm">
-                    Category
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('category')}
+                  >
+                    Category <SortIcon field="category" />
                   </th>
-                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-right">
-                    Fund AUM
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap text-right cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('aum')}
+                  >
+                    Fund AUM <SortIcon field="aum" />
                   </th>
-                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
-                    Quartile
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('quartile')}
+                  >
+                    Quartile <SortIcon field="quartile" />
                   </th>
-                  <th className="bg-gray-100 py-1.5 px-2 font-semibold text-gray-600 text-sm text-center">
-                    Priority
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('selectionPriority')}
+                  >
+                    Priority <SortIcon field="selectionPriority" />
+                  </th>
+                  <th 
+                    className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('globalRank')}
+                  >
+                    Global Rank <SortIcon field="globalRank" />
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="text-[11px]">
                 {currentData.map((fund) => {
-                  let quartileColor = "bg-gray-100 text-gray-800";
-                  if (
-                    fund.quartile?.includes("Q1") ||
-                    fund.quartile?.includes("TOP")
-                  )
-                    quartileColor = "bg-green-100 text-green-800";
-                  if (
-                    fund.quartile?.includes("Q4") ||
-                    fund.quartile?.includes("BOTTOM")
-                  )
-                    quartileColor = "bg-red-100 text-red-800";
+                  let quartileColor = "bg-gray-100 text-gray-800 border-gray-200";
+                  if (fund.quartile?.includes("Q1") || fund.quartile?.includes("TOP"))
+                    quartileColor = "bg-green-100 text-green-800 border-green-200";
+                  if (fund.quartile?.includes("Q4") || fund.quartile?.includes("BOTTOM"))
+                    quartileColor = "bg-red-100 text-red-800 border-red-200";
                   if (fund.quartile?.includes("Q2"))
-                    quartileColor = "bg-blue-100 text-blue-800";
+                    quartileColor = "bg-blue-100 text-blue-800 border-blue-200";
                   if (fund.quartile?.includes("Q3"))
-                    quartileColor = "bg-yellow-100 text-yellow-800";
+                    quartileColor = "bg-orange-100 text-orange-800 border-orange-200";
+
+                  let badge = fund.quartile?.replace("-TOP QUARTILE", "")
+                                           .replace("-UPPER MID QUARTILE", "")
+                                           .replace("-LOWER MID QUARTILE", "")
+                                           .replace("-BOTTOM QUARTILE", "") || "Unrated";
 
                   return (
                     <tr
                       key={fund.id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
+                      className="border-b border-gray-100 hover:bg-purple-50 transition-colors"
                     >
                       <td
-                        className="py-1.5 px-2 text-gray-800 font-medium max-w-md truncate"
+                        className="py-0.5 px-1.5 text-gray-900 font-semibold max-w-[300px] truncate"
                         title={fund.name}
                       >
                         {fund.name}
                       </td>
-                      <td className="py-1.5 px-2 text-gray-600">
+                      <td className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">
                         {fund.category || "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-gray-700 text-right font-medium">
-                        {fund.aum ? "₹" + fund.aum.toLocaleString() : "-"}
+                      <td className="py-0.5 px-1.5 text-gray-700 text-right font-medium">
+                        {fund.aum ? "₹" + fund.aum.toLocaleString('en-IN') : "-"}
                       </td>
-                      <td className="py-1.5 px-2 text-center">
-                        <span
-                          className={
-                            "px-2 py-1 rounded-full text-xs font-semibold " +
-                            quartileColor
-                          }
-                        >
-                          {fund.quartile || "Unrated"}
+                      <td className="py-0.5 px-1.5 text-center">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${quartileColor}`}>
+                          {badge}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 text-center font-bold text-gray-700">
+                      <td className="py-0.5 px-1.5 text-center font-bold text-gray-700">
                         {fund.selectionPriority || "-"}
+                      </td>
+                      <td className="py-0.5 px-1.5 text-center font-bold text-gray-700">
+                        {fund.globalRank || "-"}
                       </td>
                     </tr>
                   );
                 })}
-                {filteredFunds.length === 0 && (
+                {currentData.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-10 text-gray-500">
-                      No funds found.
+                    <td colSpan={6} className="text-center py-6 text-gray-500">
+                      No funds found matching your criteria.
                     </td>
                   </tr>
                 )}
@@ -150,15 +186,15 @@ export default function ResearchDataView() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredFunds.length}
+            totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val);
+            onItemsPerPageChange={(num) => {
+              setItemsPerPage(num);
               setCurrentPage(1);
             }}
           />
-        </div>
+        </>
       )}
     </div>
   );

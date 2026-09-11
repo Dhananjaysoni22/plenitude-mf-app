@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient';
 
-export const getNotifications = () => {
-  return axiosClient.get('/notifications');
+export const getNotifications = (page: number = 1, limit: number = 100, search: string = '', sortField: string = '', sortDir: string = '') => {
+  return axiosClient.get(`/notifications?page=${page}&limit=${limit}&search=${search}&sortField=${sortField}&sortDir=${sortDir}`);
 };
 
 export const triggerAlertEngine = () => {

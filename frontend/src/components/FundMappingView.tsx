@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   getUnmappedHoldings,
-  getResearchFunds,
+  getRawResearchFunds,
   mapFund,
 } from "../api/data.api";
 import Select from "react-select";
@@ -35,7 +35,7 @@ export default function FundMappingView() {
       setLoading(true);
       const [unmappedRes, fundsRes] = await Promise.all([
         getUnmappedHoldings(),
-        getResearchFunds(),
+        getRawResearchFunds(),
       ]);
       setUnmapped(unmappedRes.data);
       setResearchFunds(fundsRes.data);

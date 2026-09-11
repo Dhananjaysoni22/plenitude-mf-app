@@ -1,5 +1,8 @@
 import { getRmClientsDal, updateClientLastReviewDal } from '../dal/rm.dal';
 import { getSystemSettingsDal } from '../dal/settings.dal';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const getRmIntelligenceService = async (rmId: string) => {
   const clients = await getRmClientsDal(rmId);
@@ -8,8 +11,17 @@ export const getRmIntelligenceService = async (rmId: string) => {
 
   const settings = await getSystemSettingsDal();
   const thresholdDays = settings?.reviewThresholdDays || 45;
+  const currentDrawdown = settings?.currentDrawdown || 0;
   const thresholdDate = new Date();
   thresholdDate.setDate(thresholdDate.getDate() - thresholdDays);
+
+  const activeRule = await prisma.drawdownRule.findFirst({
+    where: {
+      minDrawdown: { lte: currentDrawdown },
+      maxDrawdown: { gte: currentDrawdown }
+    }
+  });
+  const targetEquityPct = activeRule?.equityAllocation || 0;
 
   let totalQ1 = 0; let totalQ2 = 0; let totalQ3 = 0; let totalQ4 = 0; let totalUnmapped = 0;
   let q4Aum = 0;
@@ -52,14 +64,32 @@ export const getRmIntelligenceService = async (rmId: string) => {
       isOverdue = true;
       daysSinceReview = thresholdDays;
     }
+
+    let transferAmount = 0;
+    let transferDirection = '';
+    
+    if (targetEquityPct > 0 && client.totalAum > 0) {
+      const targetEquityAum = (targetEquityPct / 100) * client.totalAum;
+      if (client.equityAum < targetEquityAum) {
+        transferAmount = targetEquityAum - client.equityAum;
+        transferDirection = 'DEBT_TO_EQUITY';
+      } else if (client.equityAum > targetEquityAum) {
+        transferAmount = client.equityAum - targetEquityAum;
+        transferDirection = 'EQUITY_TO_DEBT';
+      }
+    }
     
     callList.push({
       clientId: client.id,
       name: client.name,
       pan: client.pan,
       equityAum: client.equityAum,
+      debtAum: client.debtAum,
       totalAum: client.totalAum,
       equityRatio: equityRatio * 100,
+      targetEquityPct,
+      transferAmount,
+      transferDirection,
       alerts: client.notifications.length,
       alertTypes: Array.from(new Set(client.notifications.map((n: any) => n.type))),
       isOverExposed,
@@ -70,6 +100,9 @@ export const getRmIntelligenceService = async (rmId: string) => {
 
   clientGrowth.sort((a, b) => a.growth - b.growth);
   const flightRisk = clientGrowth.slice(0, 5);
+
+  // Sort CallList by alerts first, then overdue
+  callList.sort((a, b) => b.alerts - a.alerts || b.daysSinceReview - a.daysSinceReview);
 
   const quartilesArray = [
     { name: 'Q1 (Top Quartile)', value: totalQ1 },

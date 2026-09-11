@@ -38,16 +38,56 @@ export const getMyNotifications = asyncHandler(async (req: AuthRequest, res: Res
 
   const whereClause = user.role === 'ADMIN' ? {} : { rmId: user.id };
 
-  const notifications = await prisma.notification.findMany({
+  let notifications = await prisma.notification.findMany({
     where: whereClause,
     include: {
       client: { select: { name: true } },
       rm: { select: { name: true } }
-    },
-    orderBy: { createdAt: 'desc' }
+    }
   });
 
-  res.json(notifications);
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 100;
+  const search = ((req.query.search as string) || '').toLowerCase();
+  const sortField = (req.query.sortField as string) || 'priority';
+  const sortDir = (req.query.sortDir as string) || 'desc';
+
+  if (search) {
+    notifications = notifications.filter((n: any) => 
+      n.client?.name?.toLowerCase().includes(search) || 
+      n.message?.toLowerCase().includes(search) ||
+      n.type?.toLowerCase().includes(search)
+    );
+  }
+
+  notifications = notifications.map((n: any) => {
+    let priority = 0;
+    if (n.type === 'Q4_ALERT') priority = 3;
+    else if (n.type === 'Q3_ALERT') priority = 2;
+    else if (n.type === 'DRAWDOWN_ALERT') priority = 1;
+    return { ...n, priority };
+  });
+
+  notifications.sort((a: any, b: any) => {
+    let comparison = 0;
+    if (sortField === 'priority') {
+      comparison = a.priority - b.priority;
+      if (comparison === 0) comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    } else if (sortField === 'client') {
+      comparison = (a.client?.name || '').localeCompare(b.client?.name || '');
+    } else if (sortField === 'status') {
+      comparison = a.status.localeCompare(b.status);
+    } else if (sortField === 'date') {
+      comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+
+    return sortDir === 'asc' ? comparison : -comparison;
+  });
+
+  const total = notifications.length;
+  const paginatedData = notifications.slice((page - 1) * limit, page * limit);
+
+  res.json({ data: paginatedData, total });
 });
 
 export const resolveNotification = asyncHandler(async (req: AuthRequest, res: Response) => {

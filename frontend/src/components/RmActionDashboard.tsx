@@ -9,8 +9,10 @@ import Pagination from './Pagination';
 export default function RmActionDashboard() {
   const [data, setData] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState('alerts');
+  const [sortDir, setSortDir] = useState('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,6 +21,21 @@ export default function RmActionDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir(field === 'alerts' ? 'desc' : 'asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-400 opacity-50">↕</span>;
+    return <span className="ml-1 text-blue-600 font-bold">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -85,58 +102,8 @@ export default function RmActionDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        
-        {/* Portfolio Quality Donut */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-1">Overall Portfolio Quality</h3>
-          <p className="text-xs text-gray-500 mb-4">Total book broken down by research quartile.</p>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.quartiles.filter((q: any) => q.value > 0)}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                >
-                  {data.quartiles.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip formatter={(value: number) => ['INR ' + (value / 100000).toFixed(1) + ' L', 'AUM']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Flight Risk Bar Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
-             <TrendingDown className="text-red-500" /> Flight Risk Tracker
-          </h3>
-          <p className="text-xs text-gray-500 mb-4">Bottom 5 clients with the largest 30-day negative growth.</p>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.flightRisk} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tickFormatter={(val) => '-INR ' + (Math.abs(val) / 100000).toFixed(0) + 'L'} reversed />
-                <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12, fontWeight: 'bold'}} />
-                <RechartsTooltip formatter={(value: number) => ['-INR ' + (Math.abs(value) / 100000).toFixed(1) + ' L', 'Loss']} />
-                <Bar dataKey="growth" fill="#ef4444" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
-
       {/* Smart Call List */}
-      <div id="roster-table" className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div id="roster-table" className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <PhoneCall className="text-blue-600" /> Master Client Roster & Alerts
@@ -146,7 +113,7 @@ export default function RmActionDashboard() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text" 
-              placeholder="Search by Client, PAN, or risk (Q3, Q4, Drawdown)..." 
+              placeholder="Search by Client, PAN, or risk..." 
               value={searchQuery}
               onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -157,80 +124,148 @@ export default function RmActionDashboard() {
         {data.callList.length === 0 ? (
           <p className="text-gray-500 italic">No clients assigned to your profile yet.</p>
         ) : (
-          <>
-            <div className="max-h-[600px] overflow-y-auto custom-scrollbar border border-gray-200 rounded-lg">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm border-b border-gray-200">
-                  <tr>
-                    <th className="py-2 px-3 font-bold text-gray-700 uppercase tracking-wider">Client & PAN</th>
-                    <th className="py-2 px-3 font-bold text-gray-700 uppercase tracking-wider">Alerts & Risks</th>
-                    <th className="py-2 px-3 font-bold text-gray-700 uppercase tracking-wider">Equity Allocation</th>
-                    <th className="py-2 px-3 font-bold text-gray-700 uppercase tracking-wider">Last Review</th>
-                    <th className="py-2 px-3 font-bold text-gray-700 uppercase tracking-wider text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {data.callList
-                    .filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true)
-                    .filter((c: any) => 
-                      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                      c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))
-                    )
-                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                    .map((client: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-blue-50/50 transition-colors bg-white">
-                      <td className="py-2 px-3 whitespace-nowrap">
-                        <p className="font-bold text-gray-900">{client.name}</p>
-                        <p className="text-[10px] text-gray-500 font-mono mt-0.5">{client.pan || 'N/A'}</p>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          {client.alertTypes?.map((t: string) => {
-                             let badge = t;
-                             let color = 'bg-gray-100 text-gray-800 border-gray-200';
-                             if(t === 'Q4_ALERT') { badge = 'Q4 Risk'; color = 'bg-red-50 text-red-700 border-red-200'; }
-                             if(t === 'Q3_ALERT') { badge = 'Q3 Risk'; color = 'bg-yellow-50 text-yellow-700 border-yellow-200'; }
-                             if(t === 'DRAWDOWN_ALERT') { badge = 'Rebalance'; color = 'bg-amber-50 text-amber-700 border-amber-200'; }
-                             return <span key={t} className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${color}`}>{badge}</span>
-                          })}
-                          {(!client.alertTypes || client.alertTypes.length === 0) && client.isOverdue && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border bg-orange-50 text-orange-700 border-orange-200">Overdue Review</span>
-                          )}
-                          {(!client.alertTypes || client.alertTypes.length === 0) && !client.isOverdue && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-400">Stable</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <p className={`font-semibold ${client.isOverExposed ? 'text-amber-600' : 'text-gray-700'}`}>
-                          {client.equityRatio.toFixed(1)}%
-                        </p>
-                        <p className="text-[10px] text-gray-500 font-medium mt-0.5">INR {(client.equityAum || 0).toLocaleString()}</p>
-                      </td>
-                      <td className={`py-2 px-3 ${client.isOverdue ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
-                        {client.daysSinceReview}d
-                      </td>
-                      <td className="py-2 px-3 text-right whitespace-nowrap">
-                        <Link to={`/clients/${client.clientId}`} className="text-blue-600 hover:text-blue-800 font-bold hover:underline">
-                          View 360
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) || c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))).length / itemsPerPage)}
-                totalItems={data.callList.filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true).filter((c:any) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) || c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))).length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={(num) => { setItemsPerPage(num); setCurrentPage(1); }}
-              />
-          </>
+          (() => {
+            let processedList = data.callList
+              .filter((c: any) => showOnlyQ4 ? c.alertTypes?.includes('Q4_ALERT') : true)
+              .filter((c: any) => 
+                c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))
+              );
+
+            processedList.sort((a: any, b: any) => {
+              if (sortField === 'alerts') return sortDir === 'asc' ? a.alerts - b.alerts : b.alerts - a.alerts;
+              if (sortField === 'name') return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+              if (sortField === 'pan') return sortDir === 'asc' ? (a.pan || '').localeCompare(b.pan || '') : (b.pan || '').localeCompare(a.pan || '');
+              if (sortField === 'totalAum') return sortDir === 'asc' ? a.totalAum - b.totalAum : b.totalAum - a.totalAum;
+              if (sortField === 'equityAum') return sortDir === 'asc' ? a.equityAum - b.equityAum : b.equityAum - a.equityAum;
+              if (sortField === 'debtAum') return sortDir === 'asc' ? a.debtAum - b.debtAum : b.debtAum - a.debtAum;
+              if (sortField === 'transferAmount') return sortDir === 'asc' ? a.transferAmount - b.transferAmount : b.transferAmount - a.transferAmount;
+              if (sortField === 'daysSinceReview') return sortDir === 'asc' ? a.daysSinceReview - b.daysSinceReview : b.daysSinceReview - a.daysSinceReview;
+              return 0;
+            });
+
+            const totalItems = processedList.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginatedList = processedList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            return (
+              <>
+                <div className="overflow-auto h-[calc(100vh-280px)] border border-gray-200 rounded-lg">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 z-10 shadow-sm">
+                      <tr className="bg-gray-100 border-y border-gray-200">
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('name')}>
+                          Client Name <SortIcon field="name" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('pan')}>
+                          PAN <SortIcon field="pan" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-right" onClick={() => handleSort('totalAum')}>
+                          Total AUM <SortIcon field="totalAum" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-right" onClick={() => handleSort('equityAum')}>
+                          Equity AUM <SortIcon field="equityAum" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-right" onClick={() => handleSort('debtAum')}>
+                          Debt AUM <SortIcon field="debtAum" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-right" onClick={() => handleSort('transferAmount')}>
+                          Strategy Transfer <SortIcon field="transferAmount" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-center" onClick={() => handleSort('alerts')}>
+                          Alerts <SortIcon field="alerts" />
+                        </th>
+                        <th className="bg-gray-100 py-1 px-1.5 font-bold text-gray-700 text-[11px] uppercase whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-colors text-right" onClick={() => handleSort('daysSinceReview')}>
+                          Last Review <SortIcon field="daysSinceReview" />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-[11px] bg-white divide-y divide-gray-100">
+                      {paginatedList.map((client: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors cursor-pointer" onClick={() => document.getElementById(`client-link-${client.clientId}`)?.click()}>
+                          <td className="py-0.5 px-1.5 font-bold text-gray-900 truncate max-w-[150px]">
+                            {client.name}
+                            <Link id={`client-link-${client.clientId}`} to={`/clients/${client.clientId}`} className="hidden" />
+                          </td>
+                          <td className="py-0.5 px-1.5 text-gray-600 truncate">{client.pan || '-'}</td>
+                          <td className="py-0.5 px-1.5 text-gray-900 text-right font-medium">₹{(client.totalAum || 0).toLocaleString('en-IN')}</td>
+                          <td className="py-0.5 px-1.5 text-gray-600 text-right">
+                            <span className={client.isOverExposed ? 'text-amber-600 font-bold' : ''}>
+                              ₹{(client.equityAum || 0).toLocaleString('en-IN')} ({client.equityRatio.toFixed(1)}%)
+                            </span>
+                          </td>
+                          <td className="py-0.5 px-1.5 text-gray-600 text-right">
+                            ₹{(client.debtAum || 0).toLocaleString('en-IN')}
+                            {client.totalAum > 0 && ` (${((client.debtAum / client.totalAum) * 100).toFixed(1)}%)`}
+                          </td>
+                          <td className="py-0.5 px-1.5 text-right font-bold whitespace-nowrap">
+                            {client.transferAmount > 0 ? (
+                              client.transferDirection === 'DEBT_TO_EQUITY' ? (
+                                <span className="text-green-600">
+                                  Move ₹{Math.round(client.transferAmount).toLocaleString('en-IN')}
+                                  {client.totalAum > 0 && ` (${((client.transferAmount / client.totalAum) * 100).toFixed(1)}%)`} to Equity
+                                </span>
+                              ) : (
+                                <span className="text-red-600">
+                                  Move ₹{Math.round(client.transferAmount).toLocaleString('en-IN')}
+                                  {client.totalAum > 0 && ` (${((client.transferAmount / client.totalAum) * 100).toFixed(1)}%)`} to Debt
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-gray-400">Target Reached</span>
+                            )}
+                          </td>
+                          <td className="py-0.5 px-1.5 text-center">
+                            <div className="flex flex-wrap gap-1 justify-center">
+                              {client.alertTypes?.map((t: string) => {
+                                let badge = t.replace('_ALERT', '');
+                                let color = 'bg-gray-100 text-gray-800 border-gray-200';
+                                if (badge === 'Q4') color = 'bg-red-100 text-red-800 border-red-200';
+                                else if (badge === 'Q3') color = 'bg-orange-100 text-orange-800 border-orange-200';
+                                else if (badge === 'DRAWDOWN') color = 'bg-purple-100 text-purple-800 border-purple-200';
+                                
+                                return (
+                                  <span key={t} className={`font-bold px-1 py-0.5 rounded text-[9px] border ${color}`}>
+                                    {badge}
+                                  </span>
+                                );
+                              })}
+                              {(!client.alertTypes || client.alertTypes.length === 0) && client.isOverdue && (
+                                <span className="font-bold px-1 py-0.5 rounded text-[9px] border bg-amber-100 text-amber-800 border-amber-200">OVERDUE</span>
+                              )}
+                              {(!client.alertTypes || client.alertTypes.length === 0) && !client.isOverdue && (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className={`py-0.5 px-1.5 text-right font-medium ${client.isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
+                            {client.daysSinceReview}d
+                          </td>
+                        </tr>
+                      ))}
+                      {paginatedList.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="text-center py-6 text-gray-500">
+                            No clients match your filter.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={(num) => { setItemsPerPage(num); setCurrentPage(1); }}
+                />
+              </>
+            );
+          })()
         )}
       </div>
 

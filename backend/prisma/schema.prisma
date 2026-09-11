@@ -69,6 +69,7 @@ model ResearchFund {
   ret5Y             Float?
   quartile          String? // e.g., "Q1-TOP QUARTILE", "Q4-BOTTOM QUARTILE"
   selectionPriority Int? // e.g., 1, 4, 6
+  globalRank        Int? // e.g., Rank from research sheet
   action            String? // Could be derived or explicit
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

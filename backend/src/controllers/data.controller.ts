@@ -17,8 +17,13 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 export const getClients = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError('Unauthorized', 401);
-  const clients = await fetchClients(req.user);
-  res.json(clients);
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 100;
+  const search = (req.query.search as string) || '';
+  const sortField = (req.query.sortField as string) || '';
+  const sortDir = (req.query.sortDir as string) || 'asc';
+  const result = await fetchClients(req.user, page, limit, search, sortField, sortDir);
+  res.json(result);
 });
 
 export const getClientById = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -38,7 +43,18 @@ export const getClientHistory = asyncHandler(async (req: AuthRequest, res: Respo
 });
 
 export const getResearchFunds = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const funds = await fetchResearchFunds();
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 100;
+  const search = (req.query.search as string) || '';
+  const sortField = (req.query.sortField as string) || 'name';
+  const sortDir = (req.query.sortDir as string) || 'asc';
+  const funds = await fetchResearchFunds(page, limit, search, sortField, sortDir);
+  res.json(funds);
+});
+
+export const getRawResearchFundsController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { getRawResearchFunds } = require('../dal/research.dal');
+  const funds = await getRawResearchFunds();
   res.json(funds);
 });
 
