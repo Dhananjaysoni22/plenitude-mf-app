@@ -11,21 +11,41 @@ export const upsertClient = async (pan: string, name: string, updateData: any, c
 };
 
 export const getAllClients = async (page: number = 1, limit: number = 100, search: string = '', sortField: string = '', sortDir: string = 'asc') => {
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+  const currentDrawdown = settings?.currentDrawdown || 0;
+  const activeRule = await prisma.drawdownRule.findFirst({
+    where: {
+      minDrawdown: { lte: currentDrawdown },
+      maxDrawdown: { gte: currentDrawdown }
+    }
+  });
+  const targetEquityPct = activeRule?.equityAllocation || 0;
+
   let clients = await prisma.client.findMany({
     include: { rm: { select: { name: true } }, notifications: { where: { status: 'PENDING' } } }
   });
-  return processClients(clients, page, limit, search, sortField, sortDir);
+  return processClients(clients, page, limit, search, sortField, sortDir, targetEquityPct);
 };
 
 export const getClientsByRm = async (rmId: string, page: number = 1, limit: number = 100, search: string = '', sortField: string = '', sortDir: string = 'asc') => {
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+  const currentDrawdown = settings?.currentDrawdown || 0;
+  const activeRule = await prisma.drawdownRule.findFirst({
+    where: {
+      minDrawdown: { lte: currentDrawdown },
+      maxDrawdown: { gte: currentDrawdown }
+    }
+  });
+  const targetEquityPct = activeRule?.equityAllocation || 0;
+
   let clients = await prisma.client.findMany({
     where: { rmId },
     include: { rm: { select: { name: true } }, notifications: { where: { status: 'PENDING' } } }
   });
-  return processClients(clients, page, limit, search, sortField, sortDir);
+  return processClients(clients, page, limit, search, sortField, sortDir, targetEquityPct);
 };
 
-const processClients = (clients: any[], page: number, limit: number, search: string, sortField: string, sortDir: string) => {
+const processClients = (clients: any[], page: number, limit: number, search: string, sortField: string, sortDir: string, targetEquityPct: number) => {
   // 1. Search
   if (search) {
     const s = search.toLowerCase();
@@ -37,13 +57,34 @@ const processClients = (clients: any[], page: number, limit: number, search: str
     );
   }
 
-  // 2. Alert Priority Calculation
+  // 2. Data Enrichment
   clients = clients.map(c => {
     let alertScore = 0;
     if (c.notifications?.some((n: any) => n.type === 'Q4_ALERT')) alertScore = 3;
     else if (c.notifications?.some((n: any) => n.type === 'Q3_ALERT')) alertScore = 2;
     else if (c.notifications?.length > 0) alertScore = 1;
-    return { ...c, alertScore };
+
+    let transferAmount = 0;
+    let transferDirection = '';
+    
+    if (targetEquityPct > 0 && c.totalAum > 0) {
+      const targetEquityAum = (targetEquityPct / 100) * c.totalAum;
+      if (c.equityAum < targetEquityAum) {
+        transferAmount = targetEquityAum - c.equityAum;
+        transferDirection = 'DEBT_TO_EQUITY';
+      } else if (c.equityAum > targetEquityAum) {
+        transferAmount = c.equityAum - targetEquityAum;
+        transferDirection = 'EQUITY_TO_DEBT';
+      }
+    }
+
+    return { 
+      ...c, 
+      alertScore,
+      targetEquityPct,
+      transferAmount,
+      transferDirection
+    };
   });
 
   // 3. Sort
