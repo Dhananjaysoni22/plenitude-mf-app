@@ -17,10 +17,14 @@ jobs:
       - name: Deploy to NAS Docker
         run: |
           # 1. Define where your app lives on the NAS
-          # IMPORTANT: Update this path if your folder is named differently!
           APP_DIR="/volume1/docker/plenitude" 
           
           mkdir -p $APP_DIR
+          
+          # Install rsync if missing inside the container
+          if ! command -v rsync &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y rsync
+          fi
           
           # 2. Sync the fresh code from GitHub, but DO NOT touch the custom NAS docker-compose.yml or .env files!
           rsync -av --delete --exclude='docker-compose.yml' --exclude='.env' ./ $APP_DIR/
