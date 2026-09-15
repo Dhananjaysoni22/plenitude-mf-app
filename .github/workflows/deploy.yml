@@ -22,8 +22,8 @@ jobs:
           
           mkdir -p $APP_DIR
           
-          # 2. Sync the fresh code from GitHub directly into your NAS folder
-          rsync -av --delete ./ $APP_DIR/
+          # 2. Sync the fresh code from GitHub, but DO NOT touch the custom NAS docker-compose.yml or .env files!
+          rsync -av --delete --exclude='docker-compose.yml' --exclude='.env' ./ $APP_DIR/
           
           # 3. Rebuild the Docker containers
           cd $APP_DIR
