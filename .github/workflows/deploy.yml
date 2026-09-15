@@ -1,0 +1,38 @@
+name: NAS Automated Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # This forces GitHub to run this job on your NAS, not on GitHub's cloud servers
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to NAS Docker
+        run: |
+          # 1. Define where your app lives on the NAS
+          # IMPORTANT: Update this path if your folder is named differently!
+          APP_DIR="/volume1/docker/plenitude" 
+          
+          mkdir -p $APP_DIR
+          
+          # 2. Sync the fresh code from GitHub directly into your NAS folder
+          rsync -av --delete ./ $APP_DIR/
+          
+          # 3. Rebuild the Docker containers
+          cd $APP_DIR
+          
+          # Stop old containers
+          docker compose down
+          
+          # Start new containers in the background
+          docker compose up -d --build
+          
+          # Clean up old unused images to save disk space
+          docker image prune -f

@@ -65,12 +65,12 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="flex h-screen bg-gray-50 overflow-hidden print:h-auto print:overflow-visible">
         {/* Sidebar */}
         <Sidebar user={user} onLogout={handleLogout} rmCanViewClients={rmCanViewClients} />
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto print:overflow-visible p-4 md:p-8">
           <Routes>
             <Route path="/" element={user?.role === 'ADMIN' ? <RmAnalyticsDashboard /> : <RmActionDashboard />} />
             <Route path="/alerts" element={<NotificationCenter user={user} />} />

@@ -106,3 +106,45 @@ export const getDrawdownData = async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to fetch drawdown data' });
   }
 };
+import * as xlsx from 'xlsx';
+
+export const exportClientExcel = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new AppError('Unauthorized', 401);
+  const client = await fetchClientDetails(req.params.id as string, req.user);
+  if (!client) throw new AppError('Client not found', 404);
+
+  const columns = req.body.columns || [
+    { id: 'fundNameRaw', label: 'Scheme Name' },
+    { id: 'researchFund', label: 'Research Fund Mapping' },
+    { id: 'currentValue', label: 'Current Value' }
+  ];
+
+  const wsData: any[][] = [
+    ['Client Name', client.name],
+    ['PAN', client.pan],
+    ['RM', client.rm?.name || 'Unassigned'],
+    ['Total AUM', client.totalAum],
+    [],
+    columns.map((c: any) => c.label)
+  ];
+
+  client.holdings?.forEach((h: any) => {
+    const row = columns.map((c: any) => {
+      let val = h[c.id];
+      if (c.id === 'researchFund') val = h.researchFund?.name;
+      if (c.id === 'category') val = h.researchFund?.category;
+      if (c.id === 'quartile') val = h.researchFund?.quartile;
+      return val !== null && val !== undefined ? val : '-';
+    });
+    wsData.push(row);
+  });
+
+  const ws = xlsx.utils.aoa_to_sheet(wsData);
+  const wb = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(wb, ws, "Portfolio");
+  const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  
+  res.setHeader('Content-Disposition', `attachment; filename="${client.name}_Portfolio.xlsx"`);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+});

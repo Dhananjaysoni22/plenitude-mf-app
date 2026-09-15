@@ -18,7 +18,10 @@ export function useTableColumns(tableId: string, defaultColumns: Omit<ColumnDef,
         // Merge with defaults to ensure new columns are added if codebase changes
         const merged = defaultColumns.map((dc, index) => {
           const found = parsed.find(p => p.id === dc.id);
-          if (found) return found;
+          if (found) {
+            // Always sync the label from code in case we renamed it
+            return { ...found, label: dc.label };
+          }
           return { ...dc, order: parsed.length + index };
         });
         return merged.sort((a, b) => a.order - b.order);

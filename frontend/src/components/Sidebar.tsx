@@ -64,7 +64,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`bg-gray-900 text-white flex flex-col transition-all duration-300 min-h-screen border-r border-gray-800 ${isOpen ? "w-64" : "w-20"}`}
+      className={`bg-gray-900 text-white flex flex-col transition-all duration-300 min-h-screen border-r border-gray-800 print:hidden ${isOpen ? "w-64" : "w-20"}`}
     >
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-gray-800 h-16">

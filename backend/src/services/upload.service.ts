@@ -155,6 +155,15 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
     const keyAbsReturn = keys.find(k => k.toLowerCase().includes('absolute return'));
     const keyCagr = keys.find(k => k.toLowerCase().includes('cagr'));
 
+    // New AUM Breakdown columns
+    const keyDebt = keys.find(k => k.trim().toLowerCase() === 'debt');
+    const keyEquity = keys.find(k => k.trim().toLowerCase() === 'equity');
+    const keyHybrid = keys.find(k => k.trim().toLowerCase() === 'hybrid');
+    const keyLiquid = keys.find(k => k.trim().toLowerCase().includes('liquid'));
+    const keyOther = keys.find(k => k.trim().toLowerCase() === 'other');
+    const keyArbitrage = keys.find(k => k.trim().toLowerCase().includes('arbitrage'));
+    const keyAllocation = keys.find(k => k.trim().toLowerCase().includes('allocation'));
+
     if (!keyClientName || !keyScheme) continue;
 
     const clientNameRaw = String(row[keyClientName]).trim();
@@ -171,6 +180,14 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
     const holdingDays = keyHoldingDays ? parseInt(row[keyHoldingDays]) || null : null;
     const absoluteReturn = keyAbsReturn ? parseCurrency(row[keyAbsReturn]) : null;
     const cagr = keyCagr ? parseCurrency(row[keyCagr]) : null;
+
+    const debt = keyDebt ? parseCurrency(row[keyDebt]) : null;
+    const equity = keyEquity ? parseCurrency(row[keyEquity]) : null;
+    const hybrid = keyHybrid ? parseCurrency(row[keyHybrid]) : null;
+    const liquid = keyLiquid ? parseCurrency(row[keyLiquid]) : null;
+    const other = keyOther ? parseCurrency(row[keyOther]) : null;
+    const arbitrage = keyArbitrage ? parseCurrency(row[keyArbitrage]) : null;
+    const allocation = keyAllocation ? String(row[keyAllocation]).trim() : null;
 
     if (!clientNameRaw || !schemeRaw) continue;
 
@@ -189,21 +206,30 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
       if (mappingRule) researchFundId = mappingRule.researchFundId;
     }
 
-    await createHolding({
-      clientId: client.id,
-      fundId: researchFundId,
-      fundNameRaw: schemeRaw,
-      folioNumber: folio,
-      currentValue: currentValue,
-      units: units,
-      investedAmount,
-      purchaseNav,
-      currentNav,
-      dividend,
-      gain,
-      holdingDays,
-      absoluteReturn,
-      cagr
+    await prisma.clientHolding.create({
+      data: {
+        clientId: client.id,
+        fundId: researchFundId,
+        fundNameRaw: schemeRaw,
+        folioNumber: folio,
+        debt,
+        equity,
+        hybrid,
+        liquid,
+        other,
+        arbitrage,
+        allocation,
+        currentValue: currentValue,
+        units: units,
+        investedAmount,
+        purchaseNav,
+        currentNav,
+        dividend,
+        gain,
+        holdingDays,
+        absoluteReturn,
+        cagr
+      }
     });
 
     await prisma.holdingHistory.create({
@@ -212,6 +238,13 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
         fundId: researchFundId,
         fundNameRaw: schemeRaw,
         folio: folio,
+        debt,
+        equity,
+        hybrid,
+        liquid,
+        other,
+        arbitrage,
+        allocation,
         currentValue: currentValue,
         units: units,
         investedAmount,
@@ -357,7 +390,7 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
            else {
                const schemeIdx = headers.findIndex(h => h.includes('scheme'));
                const folioIdx = headers.findIndex(h => h.includes('folio'));
-               const currentValIdx = headers.findIndex(h => h.includes('current value'));
+               const currentValIdx = headers.findIndex(h => h.includes('current value') || h === 'total');
                const unitsIdx = headers.findIndex(h => h.includes('units'));
                
                const purchaseNavIdx = headers.findIndex(h => h.includes('purchase nav'));
@@ -368,6 +401,15 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                const holdingDaysIdx = headers.findIndex(h => h.includes('holding days'));
                const absReturnIdx = headers.findIndex(h => h.includes('absolute return'));
                const cagrIdx = headers.findIndex(h => h.includes('cagr'));
+
+               // New AUM Breakdown columns per scheme
+               const debtIdx = headers.findIndex(h => h.trim() === 'debt');
+               const equityIdx = headers.findIndex(h => h.trim() === 'equity');
+               const hybridIdx = headers.findIndex(h => h.trim() === 'hybrid');
+               const liquidIdx = headers.findIndex(h => h.trim().includes('liquid'));
+               const otherIdx = headers.findIndex(h => h.trim() === 'other');
+               const arbitrageIdx = headers.findIndex(h => h.trim().includes('arbitrage'));
+               const allocationIdx = headers.findIndex(h => h.trim().includes('allocation'));
 
                if (schemeIdx === -1 || !row[schemeIdx]) continue;
 
@@ -389,6 +431,14 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                const absoluteReturn = absReturnIdx > -1 ? parseCurrency(row[absReturnIdx]) : null;
                const cagr = cagrIdx > -1 ? parseCurrency(row[cagrIdx]) : null;
 
+               const debt = debtIdx > -1 ? parseCurrency(row[debtIdx]) : null;
+               const equity = equityIdx > -1 ? parseCurrency(row[equityIdx]) : null;
+               const hybrid = hybridIdx > -1 ? parseCurrency(row[hybridIdx]) : null;
+               const liquid = liquidIdx > -1 ? parseCurrency(row[liquidIdx]) : null;
+               const other = otherIdx > -1 ? parseCurrency(row[otherIdx]) : null;
+               const arbitrage = arbitrageIdx > -1 ? parseCurrency(row[arbitrageIdx]) : null;
+               const allocation = allocationIdx > -1 ? String(row[allocationIdx]).trim() : null;
+
              let researchFundId = null;
              const researchFund = await findResearchFundByName(schemeRaw);
              if (researchFund) {
@@ -399,21 +449,30 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
              }
 
              if (clientId) {
-               await createHolding({
-                  clientId,
-                  fundId: researchFundId,
-                  fundNameRaw: schemeRaw,
-                  folioNumber: folio,
-                  currentValue,
-                  units,
-                  investedAmount,
-                  purchaseNav,
-                  currentNav,
-                  dividend,
-                  gain,
-                  holdingDays,
-                  absoluteReturn,
-                  cagr
+               const holding = await prisma.clientHolding.create({
+                 data: {
+                    clientId,
+                    fundId: researchFundId,
+                    fundNameRaw: schemeRaw,
+                    folioNumber: folio,
+                    debt,
+                    equity,
+                    hybrid,
+                    liquid,
+                    other,
+                    arbitrage,
+                    allocation,
+                    currentValue,
+                    units,
+                    investedAmount,
+                    purchaseNav,
+                    currentNav,
+                    dividend,
+                    gain,
+                    holdingDays,
+                    absoluteReturn,
+                    cagr
+                 }
                });
 
                await prisma.holdingHistory.create({
@@ -422,6 +481,13 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                     fundId: researchFundId,
                     fundNameRaw: schemeRaw,
                     folio,
+                    debt,
+                    equity,
+                    hybrid,
+                    liquid,
+                    other,
+                    arbitrage,
+                    allocation,
                     currentValue,
                     units,
                     investedAmount,

@@ -95,6 +95,13 @@ model ClientHolding {
   researchFund   ResearchFund? @relation(fields: [fundId], references: [id])
   fundNameRaw    String // To store the exact name from the client sheet
   folioNumber    String?
+  debt           Float?
+  equity         Float?
+  hybrid         Float?
+  liquid         Float?
+  other          Float?
+  arbitrage      Float?
+  allocation     String?
   investedAmount Float?
   currentValue   Float?
   units          Float?
@@ -152,6 +159,13 @@ model HoldingHistory {
   fundNameRaw  String
   fundId       String?
   researchFund ResearchFund? @relation(fields: [fundId], references: [id])
+  debt         Float?
+  equity       Float?
+  hybrid       Float?
+  liquid       Float?
+  other        Float?
+  arbitrage    Float?
+  allocation   String?
 
   folio        String?
   currentValue Float?

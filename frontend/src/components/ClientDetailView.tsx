@@ -10,6 +10,8 @@ import {
   Briefcase,
   TrendingUp,
   Search,
+  FileSpreadsheet,
+  Printer
 } from "lucide-react";
 import {
   LineChart,
@@ -32,8 +34,15 @@ interface Props {
 
 const DEFAULT_COLUMNS = [
   { id: 'fundNameRaw', label: 'Scheme Name', isVisible: true },
-  { id: 'category', label: 'Category', isVisible: true },
-  { id: 'units', label: 'Units', isVisible: true },
+  { id: 'researchFund', label: 'Research Fund Mapping', isVisible: true },
+  { id: 'folioNumber', label: 'Folio Number', isVisible: true },
+  { id: 'allocation', label: 'Allocation', isVisible: false },
+  { id: 'equity', label: 'Equity', isVisible: false },
+  { id: 'debt', label: 'Debt', isVisible: false },
+  { id: 'hybrid', label: 'Hybrid', isVisible: false },
+  { id: 'liquid', label: 'Liquid', isVisible: false },
+  { id: 'other', label: 'Other', isVisible: false },
+  { id: 'arbitrage', label: 'Arbitrage', isVisible: false },
   { id: 'investedAmount', label: 'Invested', isVisible: true },
   { id: 'currentNav', label: 'Cur. NAV', isVisible: true },
   { id: 'currentValue', label: 'Current Value', isVisible: true },
@@ -172,6 +181,15 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
 
     switch(colId) {
       case 'fundNameRaw': return <td key={colId} className="py-0.5 px-1.5 font-bold text-gray-900 truncate max-w-[200px]" title={holding.fundNameRaw}>{holding.fundNameRaw}</td>;
+      case 'researchFund': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]" title={rf?.name || 'Unmapped'}>{rf?.name || "-"}</td>;
+      case 'folioNumber': return <td key={colId} className="py-0.5 px-1.5 text-gray-500 font-mono text-[10px]">{holding.folioNumber || "-"}</td>;
+      case 'allocation': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.allocation || "-"}</td>;
+      case 'equity': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.equity ? "₹" + holding.equity.toLocaleString('en-IN') : "-"}</td>;
+      case 'debt': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.debt ? "₹" + holding.debt.toLocaleString('en-IN') : "-"}</td>;
+      case 'hybrid': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.hybrid ? "₹" + holding.hybrid.toLocaleString('en-IN') : "-"}</td>;
+      case 'liquid': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.liquid ? "₹" + holding.liquid.toLocaleString('en-IN') : "-"}</td>;
+      case 'other': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.other ? "₹" + holding.other.toLocaleString('en-IN') : "-"}</td>;
+      case 'arbitrage': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.arbitrage ? "₹" + holding.arbitrage.toLocaleString('en-IN') : "-"}</td>;
       case 'category': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[100px]" title={rf?.category || 'Unmapped'}>{rf?.category || "-"}</td>;
       case 'units': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.units ? holding.units.toLocaleString('en-IN', { maximumFractionDigits: 3 }) : "-"}</td>;
       case 'investedAmount': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right font-medium">{holding.investedAmount ? "₹" + holding.investedAmount.toLocaleString('en-IN') : "-"}</td>;
@@ -192,22 +210,84 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
 
   return (
     <div className="w-full max-w-[98%] mx-auto mt-8 pb-12">
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={() => navigate((user?.role === 'ADMIN' || rmCanViewClients) ? "/clients" : "/")}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-medium"
-        >
-          <ArrowLeft size={18} /> {(user?.role === 'ADMIN' || rmCanViewClients) ? "Back to Clients" : "Back to Action Center"}
-        </button>
-        <button
-          onClick={handleMarkReviewed}
-          disabled={isReviewing}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-        >
-          <CheckCircle size={18} />{" "}
-          {isReviewing ? "Marking..." : "Mark Portfolio as Reviewed"}
-        </button>
-      </div>
+      <style>{`
+        @media print {
+          @page { size: landscape; margin: 10mm; }
+          body { 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+          }
+          table { 
+            width: 100% !important;
+            table-layout: auto !important;
+          }
+          th, td { 
+            font-size: 9px !important; 
+            padding: 4px 2px !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+          }
+          /* Ensure table rows do not split across pages */
+          tr { page-break-inside: avoid; }
+        }
+      `}</style>
+      <div className="flex justify-between items-center mb-6 print:hidden">
+          <button
+            onClick={() => navigate((user?.role === 'ADMIN' || rmCanViewClients) ? "/clients" : "/")}
+            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-medium"
+          >
+            <ArrowLeft size={18} /> {(user?.role === 'ADMIN' || rmCanViewClients) ? "Back to Clients" : "Back to Action Center"}
+          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token');
+                  const response = await fetch(`http://localhost:5000/api/data/clients/${id}/export`, {
+                    method: 'POST',
+                    headers: { 
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                      columns: visibleCols.map(c => ({ id: c.id, label: c.label })) 
+                    })
+                  });
+                  if (!response.ok) throw new Error('Download failed');
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${client.name}_Portfolio.xlsx`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  a.remove();
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to download Excel");
+                }
+              }}
+              className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <FileSpreadsheet size={18} /> Download Excel
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <Printer size={18} /> Print PDF
+            </button>
+            <button
+              onClick={handleMarkReviewed}
+              disabled={isReviewing}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              <CheckCircle size={18} />{" "}
+              {isReviewing ? "Marking..." : "Mark Portfolio as Reviewed"}
+            </button>
+          </div>
+        </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
@@ -233,7 +313,7 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 print:hidden">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center text-center">
           <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">Invested Amount</p>
           <p className="text-lg font-bold text-gray-800">
@@ -261,7 +341,7 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
       </div>
 
       {client.notifications && client.notifications.length > 0 && (
-        <div className="mb-8 flex flex-col gap-3">
+        <div className="mb-8 print:hidden flex flex-col gap-3">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-2">
             <AlertTriangle className="text-red-500" /> Active Alerts
           </h3>
@@ -291,7 +371,7 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
       )}
 
       {history.length > 0 && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 print:hidden">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6">
             <TrendingUp className="text-blue-500" /> AUM History (6 Months)
           </h3>
