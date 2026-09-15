@@ -26,17 +26,17 @@ jobs:
               sudo apt-get update && sudo apt-get install -y rsync
           fi
           
-          # 2. Sync the fresh code from GitHub, but DO NOT touch the custom NAS docker-compose.yml or .env files!
-          rsync -av --delete --exclude='docker-compose.yml' --exclude='.env' ./ $APP_DIR/
+          # 2. Sync the fresh code from GitHub (excluding .env to protect passwords)
+          rsync -av --delete --exclude='.env' ./ $APP_DIR/
           
           # 3. Rebuild the Docker containers
           cd $APP_DIR
           
           # Stop old containers
-          docker compose down
+          docker compose -f docker-compose-nas.yml down
           
-          # Start new containers in the background
-          docker compose up -d --build
+          # Start new containers in the background using the specific NAS compose file
+          docker compose -f docker-compose-nas.yml up -d --build
           
           # Clean up old unused images to save disk space
           docker image prune -f
