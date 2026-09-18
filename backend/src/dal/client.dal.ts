@@ -48,13 +48,32 @@ export const getClientsByRm = async (rmId: string, page: number = 1, limit: numb
 const processClients = (clients: any[], page: number, limit: number, search: string, sortField: string, sortDir: string, targetEquityPct: number) => {
   // 1. Search
   if (search) {
-    const s = search.toLowerCase();
-    clients = clients.filter(c => 
-      c.name?.toLowerCase().includes(s) || 
-      c.pan?.toLowerCase().includes(s) || 
-      c.rm?.name?.toLowerCase().includes(s) ||
-      c.notifications?.some((n: any) => n.type.toLowerCase().includes(s))
+    const s = search.toLowerCase().trim();
+    
+    // Find all family heads that match directly or have any member matching
+    const matchingFamilyHeads = new Set(
+      clients
+        .filter(c => 
+          c.name?.toLowerCase().includes(s) || 
+          c.pan?.toLowerCase().includes(s) || 
+          c.familyHead?.toLowerCase().includes(s) ||
+          c.rm?.name?.toLowerCase().includes(s) ||
+          c.notifications?.some((n: any) => n.type.toLowerCase().includes(s))
+        )
+        .map(c => (c.familyHead && c.familyHead.trim().toLowerCase()) || c.name.trim().toLowerCase())
     );
+
+    clients = clients.filter(c => {
+      const directMatch = 
+        c.name?.toLowerCase().includes(s) || 
+        c.pan?.toLowerCase().includes(s) || 
+        c.familyHead?.toLowerCase().includes(s) ||
+        c.rm?.name?.toLowerCase().includes(s) ||
+        c.notifications?.some((n: any) => n.type.toLowerCase().includes(s));
+      
+      const fh = (c.familyHead && c.familyHead.trim().toLowerCase()) || c.name.trim().toLowerCase();
+      return directMatch || matchingFamilyHeads.has(fh);
+    });
   }
 
   // 2. Data Enrichment
