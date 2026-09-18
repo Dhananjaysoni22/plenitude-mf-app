@@ -20,7 +20,8 @@ export const getAllResearchFunds = async (page: number = 1, limit: number = 100,
   const where = search ? {
     OR: [
       { name: { contains: search, mode: 'insensitive' as const } },
-      { category: { contains: search, mode: 'insensitive' as const } }
+      { category: { contains: search, mode: 'insensitive' as const } },
+      { primaryAsset: { contains: search, mode: 'insensitive' as const } }
     ]
   } : {};
 

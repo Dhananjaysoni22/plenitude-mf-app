@@ -7,6 +7,7 @@ import { ColumnManager } from "./ColumnManager";
 
 const DEFAULT_COLUMNS = [
   { id: 'name', label: 'Fund Name', isVisible: true },
+  { id: 'primaryAsset', label: 'Asset Type', isVisible: true },
   { id: 'category', label: 'Category', isVisible: true },
   { id: 'aum', label: 'Fund AUM', isVisible: true },
   { id: 'quartile', label: 'Quartile', isVisible: true },
@@ -69,6 +70,26 @@ export default function ResearchDataView() {
   const renderCell = (fund: any, colId: string) => {
     switch (colId) {
       case 'name': return <td key={colId} className="py-0.5 px-1.5 font-bold text-gray-900 truncate max-w-[300px]" title={fund.name}>{fund.name}</td>;
+      case 'primaryAsset': {
+        const val = fund.primaryAsset || '-';
+        let badgeColor = 'bg-gray-100 text-gray-700 border-gray-200';
+        const lower = val.toLowerCase();
+        if (lower.includes('equity')) badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        else if (lower.includes('debt')) badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+        else if (lower.includes('hybrid')) badgeColor = 'bg-purple-50 text-purple-700 border-purple-200';
+        else if (lower.includes('liquid')) badgeColor = 'bg-teal-50 text-teal-700 border-teal-200';
+        return (
+          <td key={colId} className="py-0.5 px-1.5 text-center">
+            {val !== '-' ? (
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${badgeColor}`}>
+                {val}
+              </span>
+            ) : (
+              <span className="text-gray-300">-</span>
+            )}
+          </td>
+        );
+      }
       case 'category': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[200px]" title={fund.category}>{fund.category}</td>;
       case 'aum': return <td key={colId} className="py-0.5 px-1.5 text-gray-900 text-right font-medium">{fund.aum ? `₹${fund.aum.toLocaleString('en-IN')}` : "-"}</td>;
       case 'quartile': {

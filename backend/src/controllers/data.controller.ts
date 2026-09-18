@@ -122,6 +122,8 @@ export const exportClientExcel = asyncHandler(async (req: AuthRequest, res: Resp
   const wsData: any[][] = [
     ['Client Name', client.name],
     ['PAN', client.pan],
+    ['Family Head', client.familyHead || '-'],
+    ['Sub Broker', client.subBroker || '-'],
     ['RM', client.rm?.name || 'Unassigned'],
     ['Total AUM', client.totalAum],
     [],

@@ -84,6 +84,7 @@ export const getRmIntelligenceService = async (rmId: string) => {
       name: client.name,
       pan: client.pan,
       familyHead: client.familyHead || null,
+      subBroker: client.subBroker || null,
       equityAum: client.equityAum,
       debtAum: client.debtAum,
       totalAum: client.totalAum,

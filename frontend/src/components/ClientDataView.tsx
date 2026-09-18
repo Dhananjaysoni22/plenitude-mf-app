@@ -10,6 +10,7 @@ const DEFAULT_COLUMNS = [
   { id: 'name', label: 'Client Name', isVisible: true },
   { id: 'pan', label: 'PAN', isVisible: true },
   { id: 'familyHead', label: 'Family Head', isVisible: true },
+  { id: 'subBroker', label: 'Sub Broker', isVisible: true },
   { id: 'rm', label: 'RM', isVisible: true },
   { id: 'totalAum', label: 'Total AUM', isVisible: true },
   { id: 'equityAum', label: 'Equity AUM', isVisible: true },
@@ -171,6 +172,8 @@ export default function ClientDataView() {
         );
       case 'familyHead':
         return <td key={colId} className="py-1 px-1.5 font-bold text-gray-800 truncate max-w-[150px]">{group.familyHead}</td>;
+      case 'subBroker':
+        return <td key={colId} className="py-1 px-1.5 text-gray-700 font-medium truncate max-w-[150px]">{group.members[0]?.subBroker || "-"}</td>;
       case 'rm':
         return <td key={colId} className="py-1 px-1.5 text-gray-700 font-medium truncate max-w-[150px]">{group.rmName}</td>;
       case 'totalAum':
@@ -224,6 +227,8 @@ export default function ClientDataView() {
         return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[100px]">{client.pan || "-"}</td>;
       case 'familyHead':
         return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">{client.familyHead || "-"}</td>;
+      case 'subBroker':
+        return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">{client.subBroker || "-"}</td>;
       case 'rm':
         return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">{client.rm?.name || "-"}</td>;
       case 'totalAum':

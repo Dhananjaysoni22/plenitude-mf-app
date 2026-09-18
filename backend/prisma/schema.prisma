@@ -31,6 +31,7 @@ model Client {
   name                  String
   pan                   String
   familyHead            String?
+  subBroker             String?
   rmId                  String?
   rm                    User?           @relation(fields: [rmId], references: [id])
   totalAum              Float           @default(0)
@@ -59,6 +60,7 @@ model ResearchFund {
   name              String   @unique
   category          String?
   subCategory       String?
+  primaryAsset      String?
   aum               Float?
   peRatio           Float?
   pbRatio           Float?
@@ -95,6 +97,8 @@ model ClientHolding {
   researchFund   ResearchFund? @relation(fields: [fundId], references: [id])
   fundNameRaw    String // To store the exact name from the client sheet
   folioNumber    String?
+  primaryAsset   String?
+  amc            String?
   debt           Float?
   equity         Float?
   hybrid         Float?
@@ -159,6 +163,8 @@ model HoldingHistory {
   fundNameRaw  String
   fundId       String?
   researchFund ResearchFund? @relation(fields: [fundId], references: [id])
+  primaryAsset String?
+  amc          String?
   debt         Float?
   equity       Float?
   hybrid       Float?

@@ -55,6 +55,7 @@ export const processClientSheet = async (buffer: Buffer) => {
     const keyDebt = keys.find(k => k.toLowerCase().includes('debt'));
     const keyHybrid = keys.find(k => k.toLowerCase().includes('hybrid'));
     const keyFamilyHead = keys.find(k => k.toLowerCase().includes('family head'));
+    const keySubBroker = keys.find(k => k.trim().toLowerCase().includes('sub broker') || k.trim().toLowerCase().includes('subbroker'));
     const keyUnits = keys.find(k => k.toLowerCase().includes('units'));
 
     // New Fields
@@ -71,6 +72,7 @@ export const processClientSheet = async (buffer: Buffer) => {
       debtAum: parseCurrency(row[keyDebt || '']),
       hybridAum: parseCurrency(row[keyHybrid || '']),
       familyHead: keyFamilyHead ? String(row[keyFamilyHead]) : null,
+      subBroker: keySubBroker && row[keySubBroker] ? String(row[keySubBroker]).trim() : null,
       totalUnits: parseCurrency(row[keyUnits || '']),
       totalInvested: keyInvested ? parseCurrency(row[keyInvested]) : null,
       totalGain: keyGain ? parseCurrency(row[keyGain]) : null,
@@ -98,6 +100,24 @@ export const processClientSheet = async (buffer: Buffer) => {
   return { rowsParsed: data.length, rowsInserted: clientsInserted };
 };
 
+const inferPrimaryAsset = (cat?: string | null, subCat?: string | null, explicit?: string | null): string | null => {
+  if (explicit && explicit.trim()) return explicit.trim();
+  const combined = `${cat || ''} ${subCat || ''}`.toLowerCase();
+  if (combined.includes('liquid') || combined.includes('overnight') || combined.includes('money market') || combined.includes('ultra short')) {
+    return 'Liquid & Ultra Short';
+  }
+  if (combined.includes('debt') || combined.includes('bond') || combined.includes('gilt') || combined.includes('income') || combined.includes('credit risk') || combined.includes('banking and psu') || combined.includes('floater') || combined.includes('treasury')) {
+    return 'Debt';
+  }
+  if (combined.includes('arbitrage') || combined.includes('hybrid') || combined.includes('balanced') || combined.includes('multi asset') || combined.includes('equity savings')) {
+    return 'Hybrid';
+  }
+  if (combined.includes('equity') || combined.includes('cap') || combined.includes('elss') || combined.includes('index') || combined.includes('thematic') || combined.includes('focused') || combined.includes('sector') || combined.includes('value fund') || combined.includes('contra')) {
+    return 'Equity';
+  }
+  return null;
+};
+
 export const processResearchSheet = async (buffer: Buffer) => {
   if (!buffer) throw new AppError('Buffer is required', 400);
   const workbook = xlsx.read(buffer, { type: 'buffer' });
@@ -110,6 +130,7 @@ export const processResearchSheet = async (buffer: Buffer) => {
     const keyName = keys.find(k => k.toLowerCase().includes('name'));
     const keyCat = keys.find(k => k.toLowerCase() === 'category' || k.toLowerCase().includes('category'));
     const keySubCat = keys.find(k => k.toLowerCase() === 'sub-category' || k.toLowerCase().includes('sub'));
+    const keyPrimaryAsset = keys.find(k => k.toLowerCase().includes('primary asset') || k.toLowerCase().includes('asset class') || k.toLowerCase() === 'asset');
     const keyAum = keys.find(k => k.toLowerCase() === 'aum');
     const keyQuartile = keys.find(k => k.toLowerCase().includes('quartile'));
     const keyPriority = keys.find(k => k.toLowerCase().includes('priority'));
@@ -118,10 +139,15 @@ export const processResearchSheet = async (buffer: Buffer) => {
     if (!keyName || !row[keyName]) continue;
 
     const fundName = String(row[keyName]).trim();
+    const category = keyCat ? String(row[keyCat]) : null;
+    const subCategory = keySubCat ? String(row[keySubCat]) : null;
+    const explicitAsset = keyPrimaryAsset && row[keyPrimaryAsset] ? String(row[keyPrimaryAsset]) : null;
+    const primaryAsset = inferPrimaryAsset(category, subCategory, explicitAsset);
     
     const parsedData = {
-      category: keyCat ? String(row[keyCat]) : null,
-      subCategory: keySubCat ? String(row[keySubCat]) : null,
+      category,
+      subCategory,
+      primaryAsset,
       aum: keyAum ? parseFloat(row[keyAum]) || 0 : null,
       quartile: keyQuartile ? String(row[keyQuartile]) : null,
       selectionPriority: keyPriority ? parseInt(row[keyPriority]) || null : null,
@@ -161,6 +187,9 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
     const keyAbsReturn = keys.find(k => k.toLowerCase().includes('absolute return'));
     const keyCagr = keys.find(k => k.toLowerCase().includes('cagr'));
 
+    const keyPrimaryAsset = keys.find(k => k.trim().toLowerCase().includes('primary asset') || k.trim().toLowerCase() === 'asset');
+    const keyAmc = keys.find(k => k.trim().toLowerCase().includes('amc') || k.trim().toLowerCase().includes('fund / amc') || k.trim().toLowerCase() === 'fund house');
+
     // New AUM Breakdown columns
     const keyDebt = keys.find(k => k.trim().toLowerCase() === 'debt');
     const keyEquity = keys.find(k => k.trim().toLowerCase() === 'equity');
@@ -187,6 +216,9 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
     const absoluteReturn = keyAbsReturn ? parseCurrency(row[keyAbsReturn]) : null;
     const cagr = keyCagr ? parseCurrency(row[keyCagr]) : null;
 
+    const primaryAsset = keyPrimaryAsset && row[keyPrimaryAsset] ? String(row[keyPrimaryAsset]).trim() : null;
+    const amc = keyAmc && row[keyAmc] ? String(row[keyAmc]).trim() : null;
+
     const debt = keyDebt ? parseCurrency(row[keyDebt]) : null;
     const equity = keyEquity ? parseCurrency(row[keyEquity]) : null;
     const hybrid = keyHybrid ? parseCurrency(row[keyHybrid]) : null;
@@ -212,12 +244,21 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
       if (mappingRule) researchFundId = mappingRule.researchFundId;
     }
 
+    if (researchFundId && primaryAsset) {
+      await prisma.researchFund.updateMany({
+        where: { id: researchFundId, OR: [{ primaryAsset: null }, { primaryAsset: '' }] },
+        data: { primaryAsset }
+      });
+    }
+
     await prisma.clientHolding.create({
       data: {
         clientId: client.id,
         fundId: researchFundId,
         fundNameRaw: schemeRaw,
         folioNumber: folio,
+        primaryAsset,
+        amc,
         debt,
         equity,
         hybrid,
@@ -244,6 +285,8 @@ export const processHoldingsSheet = async (buffer: Buffer) => {
         fundId: researchFundId,
         fundNameRaw: schemeRaw,
         folio: folio,
+        primaryAsset,
+        amc,
         debt,
         equity,
         hybrid,
@@ -413,9 +456,11 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                const equityIdx = headers.findIndex(h => h.trim() === 'equity');
                const hybridIdx = headers.findIndex(h => h.trim() === 'hybrid');
                const liquidIdx = headers.findIndex(h => h.trim().includes('liquid'));
-               const otherIdx = headers.findIndex(h => h.trim() === 'other');
+               const otherIdx = headers.findIndex(h => h.trim().includes('other'));
                const arbitrageIdx = headers.findIndex(h => h.trim().includes('arbitrage'));
                const allocationIdx = headers.findIndex(h => h.trim().includes('allocation'));
+               const primaryAssetIdx = headers.findIndex(h => h.includes('primary asset') || h === 'asset');
+               const amcIdx = headers.findIndex(h => h.includes('amc') || h.includes('fund / amc') || h === 'fund house');
 
                if (schemeIdx === -1 || !row[schemeIdx]) continue;
 
@@ -436,6 +481,9 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                const holdingDays = holdingDaysIdx > -1 ? parseInt(row[holdingDaysIdx]) || null : null;
                const absoluteReturn = absReturnIdx > -1 ? parseCurrency(row[absReturnIdx]) : null;
                const cagr = cagrIdx > -1 ? parseCurrency(row[cagrIdx]) : null;
+
+               const primaryAsset = primaryAssetIdx > -1 && row[primaryAssetIdx] ? String(row[primaryAssetIdx]).trim() : null;
+               const amc = amcIdx > -1 && row[amcIdx] ? String(row[amcIdx]).trim() : null;
 
                const debt = debtIdx > -1 ? parseCurrency(row[debtIdx]) : null;
                const equity = equityIdx > -1 ? parseCurrency(row[equityIdx]) : null;
@@ -461,6 +509,8 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                     fundId: researchFundId,
                     fundNameRaw: schemeRaw,
                     folioNumber: folio,
+                    primaryAsset,
+                    amc,
                     debt,
                     equity,
                     hybrid,
@@ -487,6 +537,8 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
                     fundId: researchFundId,
                     fundNameRaw: schemeRaw,
                     folio,
+                    primaryAsset,
+                    amc,
                     debt,
                     equity,
                     hybrid,
@@ -607,6 +659,7 @@ export const processMasterReport = async (buffer: Buffer) => {
     }
 
     const keyFamilyHead = keys.find(k => k.trim().toLowerCase().includes('family head'));
+    const keySubBroker = keys.find(k => k.trim().toLowerCase().includes('sub broker') || k.trim().toLowerCase().includes('subbroker'));
     const keyTotal = keys.find(k => k.trim().toLowerCase().includes('total portfolio aum') || k.trim().toLowerCase() === 'total' || k.trim().toLowerCase().includes('total aum'));
     const keyEquity = keys.find(k => k.trim().toLowerCase().includes('equity aum') || k.trim().toLowerCase() === 'equity');
     const keyDebt = keys.find(k => k.trim().toLowerCase().includes('debt aum') || k.trim().toLowerCase() === 'debt');
@@ -617,6 +670,7 @@ export const processMasterReport = async (buffer: Buffer) => {
       name: clientName,
       rmId: rmId,
       familyHead: keyFamilyHead && row[keyFamilyHead] ? String(row[keyFamilyHead]).trim() : null,
+      subBroker: keySubBroker && row[keySubBroker] ? String(row[keySubBroker]).trim() : null,
       totalAum: parseCurrency(row[keyTotal || '']),
       equityAum: parseCurrency(row[keyEquity || '']),
       debtAum: parseCurrency(row[keyDebt || '']),
@@ -655,6 +709,7 @@ export const processMasterReport = async (buffer: Buffer) => {
   // 5. Process MASTER_ALL_HOLDINGS sheet
   const holdingsToInsert: any[] = [];
   const historyToInsert: any[] = [];
+  const researchFundAssetUpdates = new Map<string, string>();
 
   for (const row of holdingsRows) {
     const keys = Object.keys(row);
@@ -675,6 +730,8 @@ export const processMasterReport = async (buffer: Buffer) => {
     if (!clientId) continue;
 
     const keyFolio = keys.find(k => k.trim().toLowerCase().includes('folio'));
+    const keyPrimaryAsset = keys.find(k => k.trim().toLowerCase().includes('primary asset') || k.trim().toLowerCase() === 'asset');
+    const keyAmc = keys.find(k => k.trim().toLowerCase().includes('amc') || k.trim().toLowerCase().includes('fund / amc') || k.trim().toLowerCase() === 'fund house');
     const keyTotalAum = keys.find(k => k.trim().toLowerCase().includes('total aum') || k.trim().toLowerCase().includes('current value') || k.trim().toLowerCase() === 'total');
     const keyEquity = keys.find(k => k.trim().toLowerCase() === 'equity (rs)' || k.trim().toLowerCase() === 'equity');
     const keyDebt = keys.find(k => k.trim().toLowerCase() === 'debt (rs)' || k.trim().toLowerCase() === 'debt');
@@ -686,6 +743,8 @@ export const processMasterReport = async (buffer: Buffer) => {
     const keyAlloc = keys.find(k => k.trim().toLowerCase().includes('allocation'));
 
     const folio = keyFolio && row[keyFolio] ? String(row[keyFolio]).trim() : undefined;
+    const primaryAsset = keyPrimaryAsset && row[keyPrimaryAsset] ? String(row[keyPrimaryAsset]).trim() : null;
+    const amc = keyAmc && row[keyAmc] ? String(row[keyAmc]).trim() : null;
     const currentValue = parseCurrency(row[keyTotalAum || '']);
     const equity = keyEquity ? parseCurrency(row[keyEquity]) : null;
     const debt = keyDebt ? parseCurrency(row[keyDebt]) : null;
@@ -704,11 +763,17 @@ export const processMasterReport = async (buffer: Buffer) => {
       researchFundId = researchFundMap.get(lowerScheme)!;
     }
 
+    if (researchFundId && primaryAsset) {
+      researchFundAssetUpdates.set(researchFundId, primaryAsset);
+    }
+
     const holdingRecord = {
       clientId,
       fundId: researchFundId,
       fundNameRaw: schemeRaw,
       folioNumber: folio,
+      primaryAsset,
+      amc,
       currentValue,
       equity,
       debt,
@@ -726,6 +791,8 @@ export const processMasterReport = async (buffer: Buffer) => {
       fundId: researchFundId,
       fundNameRaw: schemeRaw,
       folio: folio,
+      primaryAsset,
+      amc,
       currentValue,
       equity,
       debt,
@@ -750,6 +817,16 @@ export const processMasterReport = async (buffer: Buffer) => {
   for (let i = 0; i < historyToInsert.length; i += chunkSize) {
     const chunk = historyToInsert.slice(i, i + chunkSize);
     await prisma.holdingHistory.createMany({ data: chunk });
+  }
+
+  // 7. Update research funds' primaryAsset if captured from holdings
+  for (const [rfId, asset] of researchFundAssetUpdates.entries()) {
+    if (asset) {
+      await prisma.researchFund.updateMany({
+        where: { id: rfId, OR: [{ primaryAsset: null }, { primaryAsset: '' }] },
+        data: { primaryAsset: asset }
+      });
+    }
   }
 
   return {

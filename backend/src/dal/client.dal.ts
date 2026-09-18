@@ -57,6 +57,7 @@ const processClients = (clients: any[], page: number, limit: number, search: str
           c.name?.toLowerCase().includes(s) || 
           c.pan?.toLowerCase().includes(s) || 
           c.familyHead?.toLowerCase().includes(s) ||
+          c.subBroker?.toLowerCase().includes(s) ||
           c.rm?.name?.toLowerCase().includes(s) ||
           c.notifications?.some((n: any) => n.type.toLowerCase().includes(s))
         )
@@ -68,6 +69,7 @@ const processClients = (clients: any[], page: number, limit: number, search: str
         c.name?.toLowerCase().includes(s) || 
         c.pan?.toLowerCase().includes(s) || 
         c.familyHead?.toLowerCase().includes(s) ||
+        c.subBroker?.toLowerCase().includes(s) ||
         c.rm?.name?.toLowerCase().includes(s) ||
         c.notifications?.some((n: any) => n.type.toLowerCase().includes(s));
       

@@ -11,6 +11,7 @@ const DEFAULT_COLUMNS = [
   { id: 'name', label: 'Client Name', isVisible: true },
   { id: 'pan', label: 'PAN', isVisible: true },
   { id: 'familyHead', label: 'Family Head', isVisible: false },
+  { id: 'subBroker', label: 'Sub Broker', isVisible: false },
   { id: 'totalAum', label: 'Total AUM', isVisible: true },
   { id: 'equityAum', label: 'Equity AUM', isVisible: true },
   { id: 'debtAum', label: 'Debt AUM', isVisible: true },
@@ -122,6 +123,7 @@ export default function RmActionDashboard() {
         </td>
       );
       case 'familyHead': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">{client.familyHead || '-'}</td>;
+      case 'subBroker': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[120px]">{client.subBroker || '-'}</td>;
       case 'daysSinceReview': return (
         <td key={colId} className={`py-0.5 px-1.5 text-right font-medium ${client.isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
           {client.daysSinceReview}d
@@ -152,6 +154,7 @@ export default function RmActionDashboard() {
         </td>
       );
       case 'familyHead': return <td key={colId} className="py-1 px-1.5 font-bold text-gray-800 truncate max-w-[150px]">{group.familyHead}</td>;
+      case 'subBroker': return <td key={colId} className="py-1 px-1.5 text-gray-700 font-medium truncate max-w-[120px]">{group.members[0]?.subBroker || '-'}</td>;
       case 'totalAum': return <td key={colId} className="py-1 px-1.5 text-right font-extrabold text-gray-900">₹{(group.totalAum || 0).toLocaleString('en-IN')}</td>;
       case 'equityAum':
         const eqRatio = group.totalAum > 0 ? (group.equityAum / group.totalAum) * 100 : 0;
@@ -310,6 +313,7 @@ export default function RmActionDashboard() {
                 c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 c.pan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 c.familyHead?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.subBroker?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 c.alertTypes?.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))
               );
 
@@ -317,6 +321,7 @@ export default function RmActionDashboard() {
               if (sortField === 'alerts') return sortDir === 'asc' ? a.alerts - b.alerts : b.alerts - a.alerts;
               if (sortField === 'name') return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
               if (sortField === 'familyHead') return sortDir === 'asc' ? (a.familyHead || '').localeCompare(b.familyHead || '') : (b.familyHead || '').localeCompare(a.familyHead || '');
+              if (sortField === 'subBroker') return sortDir === 'asc' ? (a.subBroker || '').localeCompare(b.subBroker || '') : (b.subBroker || '').localeCompare(a.subBroker || '');
               if (sortField === 'pan') return sortDir === 'asc' ? (a.pan || '').localeCompare(b.pan || '') : (b.pan || '').localeCompare(a.pan || '');
               if (sortField === 'totalAum') return sortDir === 'asc' ? a.totalAum - b.totalAum : b.totalAum - a.totalAum;
               if (sortField === 'equityAum') return sortDir === 'asc' ? a.equityAum - b.equityAum : b.equityAum - a.equityAum;

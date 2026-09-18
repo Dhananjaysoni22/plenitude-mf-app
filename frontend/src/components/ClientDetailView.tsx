@@ -35,6 +35,8 @@ interface Props {
 const DEFAULT_COLUMNS = [
   { id: 'fundNameRaw', label: 'Scheme Name', isVisible: true },
   { id: 'researchFund', label: 'Research Fund Mapping', isVisible: true },
+  { id: 'primaryAsset', label: 'Asset Type', isVisible: true },
+  { id: 'amc', label: 'Fund House', isVisible: true },
   { id: 'folioNumber', label: 'Folio Number', isVisible: true },
   { id: 'allocation', label: 'Allocation', isVisible: false },
   { id: 'equity', label: 'Equity', isVisible: false },
@@ -139,6 +141,8 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
     processedHoldings = processedHoldings.filter(h => 
       h.fundNameRaw?.toLowerCase().includes(s) || 
       h.folioNumber?.toLowerCase().includes(s) || 
+      h.primaryAsset?.toLowerCase().includes(s) ||
+      h.amc?.toLowerCase().includes(s) ||
       h.researchFund?.category?.toLowerCase().includes(s)
     );
   }
@@ -182,6 +186,8 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
     switch(colId) {
       case 'fundNameRaw': return <td key={colId} className="py-0.5 px-1.5 font-bold text-gray-900 truncate max-w-[200px]" title={holding.fundNameRaw}>{holding.fundNameRaw}</td>;
       case 'researchFund': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]" title={rf?.name || 'Unmapped'}>{rf?.name || "-"}</td>;
+      case 'primaryAsset': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[120px]" title={holding.primaryAsset || '-'}>{holding.primaryAsset || "-"}</td>;
+      case 'amc': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]" title={holding.amc || '-'}>{holding.amc || "-"}</td>;
       case 'folioNumber': return <td key={colId} className="py-0.5 px-1.5 text-gray-500 font-mono text-[10px]">{holding.folioNumber || "-"}</td>;
       case 'allocation': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.allocation || "-"}</td>;
       case 'equity': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">{holding.equity ? "₹" + holding.equity.toLocaleString('en-IN') : "-"}</td>;
@@ -299,7 +305,10 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
             {client.familyHead && (
               <span>• Family Head: {client.familyHead}</span>
             )}
-            <span>• RM: {client.rm?.name}</span>
+            {client.subBroker && (
+              <span>• Sub Broker: {client.subBroker}</span>
+            )}
+            <span>• RM: {client.rm?.name || "Unassigned"}</span>
           </div>
         </div>
 
