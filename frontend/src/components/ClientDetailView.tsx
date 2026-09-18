@@ -301,7 +301,13 @@ export default function ClientDetailView({ user, rmCanViewClients = true }: Prop
             <User className="text-blue-600" size={32} /> {client.name}
           </h2>
           <div className="mt-2 text-gray-500 flex items-center gap-4 text-xs font-medium">
-            <span>PAN: {client.pan}</span>
+            <span>
+              PAN: {client.pan && client.pan !== 'NO_PAN' && !client.pan.startsWith('UNKNOWN_') ? (
+                client.pan
+              ) : (
+                <span className="text-gray-400 font-mono italic">NO PAN</span>
+              )}
+            </span>
             {client.familyHead && (
               <span>• Family Head: {client.familyHead}</span>
             )}

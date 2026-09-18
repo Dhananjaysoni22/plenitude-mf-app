@@ -31,7 +31,8 @@ export const processClientSheet = async (buffer: Buffer) => {
     if (!keyClientName || !row[keyClientName]) continue;
 
     const clientName = String(row[keyClientName]).trim();
-    const pan = keyPan ? String(row[keyPan]).trim() : `UNKNOWN_${Math.random()}`;
+    const rawPan = keyPan && row[keyPan] ? String(row[keyPan]).trim().toUpperCase() : '';
+    const pan = rawPan && rawPan !== '-' && rawPan !== 'N/A' && rawPan !== 'NA' && !rawPan.startsWith('UNKNOWN_') ? rawPan : 'NO_PAN';
     const rmName = keyRm && row[keyRm] ? String(row[keyRm]).trim() : '';
 
     let rmId: string | null = null;
@@ -343,16 +344,17 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
           const cMatch = rowStr.match(/Client:\s*(.*?)\s*(Relationship Manager:|$)/i);
           const rMatch = rowStr.match(/Relationship Manager:\s*(.*?)\s*(Report printed|$)/i);
           
-          let pan = `UNKNOWN_${Math.random()}`;
+          let pan = 'NO_PAN';
           
           if (cMatch && cMatch[1]) {
             let rawClientStr = cMatch[1].trim();
             const panMatch = rawClientStr.match(/^(.*?)\s*\((.*?)\)$/);
             if (panMatch) {
               clientName = panMatch[1].trim();
-              pan = panMatch[2].trim();
+              pan = panMatch[2].trim().toUpperCase();
             } else {
               clientName = rawClientStr;
+              pan = 'NO_PAN';
             }
           }
           
@@ -632,7 +634,8 @@ export const processMasterReport = async (buffer: Buffer) => {
     if (!keyClientName || !row[keyClientName]) continue;
 
     const clientName = String(row[keyClientName]).trim();
-    const pan = keyPan && row[keyPan] ? String(row[keyPan]).trim().toUpperCase() : `UNKNOWN_${Math.random()}`;
+    const rawPan = keyPan && row[keyPan] ? String(row[keyPan]).trim().toUpperCase() : '';
+    const pan = rawPan && rawPan !== '-' && rawPan !== 'N/A' && rawPan !== 'NA' && !rawPan.startsWith('UNKNOWN_') ? rawPan : 'NO_PAN';
     const rmRaw = keyRm && row[keyRm] ? String(row[keyRm]).trim() : '';
 
     let rmId: string | null = null;

@@ -257,6 +257,9 @@ const seedAdmin = async () => {
       });
       console.log("Default Drawdown Rules seeded successfully!");
     }
+
+    const { cleanupDuplicateClients } = require("./dal/client.dal");
+    await cleanupDuplicateClients();
   } catch (err) {
     console.error("Failed to run auto-seed script:", err);
   }

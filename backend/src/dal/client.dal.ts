@@ -3,11 +3,119 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const upsertClient = async (pan: string, name: string, updateData: any, createData: any) => {
-  return prisma.client.upsert({
-    where: { pan_name: { pan, name } },
-    update: updateData,
-    create: createData
+  const cleanName = name.trim();
+  const cleanPan = pan.trim().toUpperCase();
+
+  let existing = null;
+
+  if (cleanPan === 'NO_PAN' || cleanPan.startsWith('UNKNOWN_')) {
+    existing = await prisma.client.findFirst({
+      where: {
+        name: { equals: cleanName, mode: 'insensitive' },
+        OR: [
+          { pan: 'NO_PAN' },
+          { pan: { startsWith: 'UNKNOWN_' } }
+        ]
+      }
+    });
+  } else {
+    existing = await prisma.client.findFirst({
+      where: {
+        pan: { equals: cleanPan, mode: 'insensitive' },
+        name: { equals: cleanName, mode: 'insensitive' }
+      }
+    });
+    if (!existing) {
+      existing = await prisma.client.findFirst({
+        where: { pan: { equals: cleanPan, mode: 'insensitive' } }
+      });
+    }
+  }
+
+  if (existing) {
+    return prisma.client.update({
+      where: { id: existing.id },
+      data: {
+        ...updateData,
+        name: cleanName,
+        pan: cleanPan
+      }
+    });
+  }
+
+  return prisma.client.create({
+    data: {
+      ...createData,
+      name: cleanName,
+      pan: cleanPan
+    }
   });
+};
+
+export const cleanupDuplicateClients = async () => {
+  try {
+    const allClients = await prisma.client.findMany({
+      include: { holdings: true, history: true, notifications: true }
+    });
+
+    const byName = new Map<string, typeof allClients>();
+    for (const c of allClients) {
+      const normalizedPan = c.pan === 'NO_PAN' || c.pan.startsWith('UNKNOWN_') ? 'NO_PAN' : c.pan.trim().toUpperCase();
+      const key = `${c.name.trim().toLowerCase()}__${normalizedPan}`;
+      if (!byName.has(key)) byName.set(key, []);
+      byName.get(key)!.push(c);
+    }
+
+    let mergedCount = 0;
+    for (const [, list] of byName.entries()) {
+      if (list.length > 1) {
+        list.sort((a, b) => b.holdings.length - a.holdings.length || a.createdAt.getTime() - b.createdAt.getTime());
+        const primary = list[0];
+        const duplicates = list.slice(1);
+
+        for (const dupe of duplicates) {
+          if (dupe.holdings.length > 0) {
+            await prisma.clientHolding.updateMany({
+              where: { clientId: dupe.id },
+              data: { clientId: primary.id }
+            });
+          }
+          if (dupe.history.length > 0) {
+            await prisma.clientHistory.updateMany({
+              where: { clientId: dupe.id },
+              data: { clientId: primary.id }
+            });
+          }
+          if (dupe.notifications.length > 0) {
+            await prisma.notification.updateMany({
+              where: { clientId: dupe.id },
+              data: { clientId: primary.id }
+            });
+          }
+          await prisma.client.delete({ where: { id: dupe.id } });
+          mergedCount++;
+        }
+
+        if (primary.pan.startsWith('UNKNOWN_')) {
+          await prisma.client.update({
+            where: { id: primary.id },
+            data: { pan: 'NO_PAN' }
+          });
+        }
+      } else if (list[0].pan.startsWith('UNKNOWN_')) {
+        await prisma.client.update({
+          where: { id: list[0].id },
+          data: { pan: 'NO_PAN' }
+        });
+      }
+    }
+
+    if (mergedCount > 0) {
+      console.log(`Cleaned up and merged ${mergedCount} duplicate client records.`);
+    }
+  } catch (err) {
+    console.error('Error during duplicate client cleanup:', err);
+  }
 };
 
 export const getAllClients = async (page: number = 1, limit: number = 100, search: string = '', sortField: string = '', sortDir: string = 'asc') => {

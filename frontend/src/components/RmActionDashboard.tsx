@@ -75,7 +75,15 @@ export default function RmActionDashboard() {
           <Link id={`client-link-${client.clientId}`} to={`/clients/${client.clientId}`} className="hidden" />
         </td>
       );
-      case 'pan': return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate">{client.pan || '-'}</td>;
+      case 'pan': return (
+        <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate">
+          {client.pan && client.pan !== 'NO_PAN' && !client.pan.startsWith('UNKNOWN_') ? (
+            client.pan
+          ) : (
+            <span className="text-gray-400 font-mono text-[10px] italic">NO PAN</span>
+          )}
+        </td>
+      );
       case 'totalAum': return <td key={colId} className="py-0.5 px-1.5 text-gray-900 text-right font-medium">₹{(client.totalAum || 0).toLocaleString('en-IN')}</td>;
       case 'equityAum': return (
         <td key={colId} className="py-0.5 px-1.5 text-gray-600 text-right">
@@ -150,7 +158,13 @@ export default function RmActionDashboard() {
       );
       case 'pan': return (
         <td key={colId} className="py-1 px-1.5 text-gray-500 font-mono text-[10px]">
-          {group.members.length > 1 ? `${group.members.length} PANs` : group.members[0].pan || '-'}
+          {group.members.length > 1 ? (
+            `${group.members.length} PANs`
+          ) : group.members[0]?.pan && group.members[0].pan !== 'NO_PAN' && !group.members[0].pan.startsWith('UNKNOWN_') ? (
+            group.members[0].pan
+          ) : (
+            <span className="text-gray-400 italic">NO PAN</span>
+          )}
         </td>
       );
       case 'familyHead': return <td key={colId} className="py-1 px-1.5 font-bold text-gray-800 truncate max-w-[150px]">{group.familyHead}</td>;

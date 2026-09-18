@@ -167,7 +167,13 @@ export default function ClientDataView() {
       case 'pan':
         return (
           <td key={colId} className="py-1 px-1.5 text-gray-500 font-mono text-[10px]">
-            {group.members.length > 1 ? `${group.members.length} PANs` : group.members[0].pan || "-"}
+            {group.members.length > 1 ? (
+              `${group.members.length} PANs`
+            ) : group.members[0]?.pan && group.members[0].pan !== 'NO_PAN' && !group.members[0].pan.startsWith('UNKNOWN_') ? (
+              group.members[0].pan
+            ) : (
+              <span className="text-gray-400 italic">NO PAN</span>
+            )}
           </td>
         );
       case 'familyHead':
@@ -224,7 +230,15 @@ export default function ClientDataView() {
           </td>
         );
       case 'pan':
-        return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[100px]">{client.pan || "-"}</td>;
+        return (
+          <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[100px]">
+            {client.pan && client.pan !== 'NO_PAN' && !client.pan.startsWith('UNKNOWN_') ? (
+              client.pan
+            ) : (
+              <span className="text-gray-400 font-mono text-[10px] italic">NO PAN</span>
+            )}
+          </td>
+        );
       case 'familyHead':
         return <td key={colId} className="py-0.5 px-1.5 text-gray-600 truncate max-w-[150px]">{client.familyHead || "-"}</td>;
       case 'subBroker':
