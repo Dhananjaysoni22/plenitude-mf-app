@@ -38,5 +38,9 @@ jobs:
           # Start new containers in the background using the specific NAS compose file
           docker compose -f docker-compose-nas.yml up -d --build
           
+          # Wait 5 seconds for containers to initialize, then sync database schema
+          sleep 5
+          docker compose -f docker-compose-nas.yml exec -T backend npx prisma db push
+          
           # Clean up old unused images to save disk space
           docker image prune -f
