@@ -7,17 +7,20 @@ export default function UploadDashboard() {
   const [fileClient, setFileClient] = useState<File | null>(null);
   const [fileResearch, setFileResearch] = useState<File | null>(null);
   const [fileHoldings, setFileHoldings] = useState<File | null>(null);
+  const [fileMaster, setFileMaster] = useState<File | null>(null);
   const [bulkFiles, setBulkFiles] = useState<FileList | null>(null);
   const [bulkResults, setBulkResults] = useState<any[]>([]);
   
   const [loadingClient, setLoadingClient] = useState(false);
   const [loadingResearch, setLoadingResearch] = useState(false);
   const [loadingHoldings, setLoadingHoldings] = useState(false);
+  const [loadingMaster, setLoadingMaster] = useState(false);
   const [loadingBulk, setLoadingBulk] = useState(false);
 
   const [progressClient, setProgressClient] = useState(0);
   const [progressResearch, setProgressResearch] = useState(0);
   const [progressHoldings, setProgressHoldings] = useState(0);
+  const [progressMaster, setProgressMaster] = useState(0);
   const [progressBulk, setProgressBulk] = useState(0);
 
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
@@ -66,6 +69,7 @@ export default function UploadDashboard() {
     let setLoadingFn = null;
     let setProgressFn = null;
 
+    if (endpoint === 'master') { file = fileMaster; setLoadingFn = setLoadingMaster; setProgressFn = setProgressMaster; }
     if (endpoint === 'clients') { file = fileClient; setLoadingFn = setLoadingClient; setProgressFn = setProgressClient; }
     if (endpoint === 'research') { file = fileResearch; setLoadingFn = setLoadingResearch; setProgressFn = setProgressResearch; }
     if (endpoint === 'holdings') { file = fileHoldings; setLoadingFn = setLoadingHoldings; setProgressFn = setProgressHoldings; }
@@ -82,11 +86,12 @@ export default function UploadDashboard() {
       const response = await uploadFile(endpoint, formData, (progressEvent: any) => {
         if (progressEvent.total) setProgressFn(Math.round((progressEvent.loaded * 100) / progressEvent.total));
       });
-      setStatus({ type: 'success', message: `Inserted ${response.data.rowsInserted || 'records'} into DB successfully!` });
+      setStatus({ type: 'success', message: response.data.message || `Inserted ${response.data.rowsInserted || 'records'} into DB successfully!` });
       fetchStats();
     } catch (error: any) {
       console.error(error);
-      setStatus({ type: 'error', message: `Failed to upload ${file.name}.` });
+      const errMsg = error.response?.data?.message || `Failed to upload ${file.name}.`;
+      setStatus({ type: 'error', message: errMsg });
     } finally {
       setLoadingFn(false);
     }
@@ -94,6 +99,53 @@ export default function UploadDashboard() {
 
   return (
     <div className="w-full max-w-6xl mx-auto mt-10 p-6">
+      {/* Master AUM Report Hero Card */}
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl shadow-lg border border-blue-700/50 p-8 mb-8 text-white relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-300 text-xs font-semibold mb-3">
+              <span>★ RECOMMENDED ALL-IN-ONE</span>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Master AUM Report (2-in-1 Combined Upload)</h2>
+            <p className="text-blue-200 text-sm leading-relaxed mb-4">
+              Upload your complete workbook containing both <span className="font-semibold text-white">CLIENT_MASTER</span> and <span className="font-semibold text-white">MASTER_ALL_HOLDINGS</span>. 
+              Automatically updates clients, assigns RMs (leaving unassigned clients blank without fake emails), and syncs all 16,000+ scheme holdings in one single click.
+            </p>
+            <div className="flex items-center gap-4 text-xs text-blue-300">
+              <span className="flex items-center gap-1.5"><CheckCircle size={15} className="text-emerald-400" /> Auto-updates 1,400+ clients</span>
+              <span className="flex items-center gap-1.5"><CheckCircle size={15} className="text-emerald-400" /> High-speed bulk holdings sync</span>
+            </div>
+          </div>
+
+          <div className="w-full lg:w-96 bg-white/10 backdrop-blur-md rounded-xl p-5 border border-white/15 flex flex-col justify-center">
+            <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${fileMaster ? 'border-blue-400 bg-blue-500/20' : 'border-blue-300/40 hover:bg-white/5'}`}>
+              <div className="flex flex-col items-center justify-center pt-3 pb-3 text-center px-4">
+                <UploadCloud className={`w-8 h-8 mb-2 ${fileMaster ? 'text-blue-300' : 'text-blue-200'}`} />
+                <p className="text-xs text-white font-medium truncate max-w-[240px]">
+                  {fileMaster ? fileMaster.name : "Select MASTER_AUM_REPORT.xlsx"}
+                </p>
+                <p className="text-[10px] text-blue-200 mt-1">.xlsx or .xls file</p>
+              </div>
+              <input type="file" className="hidden" accept=".xlsx,.xls" onChange={(e) => setFileMaster(e.target.files?.[0] || null)} />
+            </label>
+            <button 
+              onClick={() => handleUpload('master')}
+              disabled={!fileMaster || loadingMaster}
+              className="mt-3 w-full bg-blue-500 hover:bg-blue-600 disabled:bg-white/20 text-white font-semibold text-sm py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {loadingMaster && <Activity className="animate-spin" size={18} />}
+              {loadingMaster ? `Processing Master Report (${progressMaster}%)...` : 'Upload & Process Master Report'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 mb-6">
+        <div className="h-px bg-gray-200 flex-1" />
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Or upload sheets individually</span>
+        <div className="h-px bg-gray-200 flex-1" />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Client Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

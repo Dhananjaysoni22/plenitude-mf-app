@@ -32,16 +32,22 @@ export const processClientSheet = async (buffer: Buffer) => {
 
     const clientName = String(row[keyClientName]).trim();
     const pan = keyPan ? String(row[keyPan]).trim() : `UNKNOWN_${Math.random()}`;
-    const rmName = keyRm ? String(row[keyRm]).trim() : 'Unassigned';
+    const rmName = keyRm && row[keyRm] ? String(row[keyRm]).trim() : '';
 
-    let rm = await findUserByNameAndRole(rmName, 'RM');
-    if (!rm) {
-      rm = await createUser({
-        name: rmName,
-        email: `${rmName.replace(/\s+/g, '.').toLowerCase()}@plenitude.com`,
-        passwordHash: 'defaultpassword',
-        role: 'RM'
-      });
+    let rmId: string | null = null;
+    const isRmBlank = !rmName || rmName.toLowerCase() === 'unassigned' || rmName === '-' || rmName.toLowerCase() === 'n/a';
+    
+    if (!isRmBlank) {
+      let rm = await findUserByNameAndRole(rmName, 'RM');
+      if (!rm) {
+        rm = await createUser({
+          name: rmName,
+          email: `${rmName.replace(/[^a-zA-Z0-9]/g, '.').toLowerCase()}@plenitude.com`,
+          passwordHash: 'defaultpassword',
+          role: 'RM'
+        });
+      }
+      rmId = rm.id;
     }
 
     const keyTotal = keys.find(k => k.toLowerCase() === 'total' || k.toLowerCase().includes('total aum'));
@@ -59,7 +65,7 @@ export const processClientSheet = async (buffer: Buffer) => {
 
     const parsedData = {
       name: clientName,
-      rmId: rm.id,
+      rmId: rmId,
       totalAum: parseCurrency(row[keyTotal || '']),
       equityAum: parseCurrency(row[keyEquity || '']),
       debtAum: parseCurrency(row[keyDebt || '']),
@@ -518,4 +524,238 @@ export const processBulkPortfolios = async (files: Express.Multer.File[]) => {
   }
   
   return results;
+};
+
+export const processMasterReport = async (buffer: Buffer) => {
+  if (!buffer) throw new AppError('Buffer is required', 400);
+  const workbook = xlsx.read(buffer, { type: 'buffer' });
+
+  // 1. Locate the two sheets dynamically
+  let clientSheetName = workbook.SheetNames.find(s => 
+    s.toUpperCase().includes('CLIENT')
+  );
+  let holdingsSheetName = workbook.SheetNames.find(s => 
+    s.toUpperCase().includes('HOLDING') || s.toUpperCase().includes('SCHEME')
+  );
+
+  // Fallback by inspecting headers if sheet names differ
+  if (!clientSheetName || !holdingsSheetName) {
+    for (const name of workbook.SheetNames) {
+      const sample = xlsx.utils.sheet_to_json(workbook.Sheets[name], { header: 1 }) as any[][];
+      const headerStr = (sample[0] || []).join(' ').toLowerCase();
+      if (headerStr.includes('folio') && headerStr.includes('scheme')) {
+        holdingsSheetName = name;
+      } else if (headerStr.includes('portfolio') || headerStr.includes('client')) {
+        clientSheetName = name;
+      }
+    }
+  }
+
+  if (!clientSheetName || !holdingsSheetName || clientSheetName === holdingsSheetName) {
+    throw new AppError('Master Excel report must contain both CLIENT_MASTER and MASTER_ALL_HOLDINGS sheets.', 400);
+  }
+
+  const clientRows = xlsx.utils.sheet_to_json(workbook.Sheets[clientSheetName]) as any[];
+  const holdingsRows = xlsx.utils.sheet_to_json(workbook.Sheets[holdingsSheetName]) as any[];
+
+  // 2. Cache existing RMs for O(1) matching
+  const existingRms = await prisma.user.findMany({ where: { role: 'RM' } });
+  const rmMap = new Map<string, string>();
+  existingRms.forEach(u => rmMap.set(u.name.trim().toLowerCase(), u.id));
+
+  const panToClientIdMap = new Map<string, string>();
+  const nameToClientIdMap = new Map<string, string>();
+
+  let clientsUpserted = 0;
+  let rmsCreated = 0;
+  let unassignedClients = 0;
+
+  // 3. Process CLIENT_MASTER sheet
+  for (const row of clientRows) {
+    const keys = Object.keys(row);
+    const keyClientName = keys.find(k => k.trim().toLowerCase().includes('client name') || k.trim().toLowerCase() === 'client');
+    const keyPan = keys.find(k => k.trim().toLowerCase() === 'pan' || k.trim().toLowerCase().includes('pan'));
+    const keyRm = keys.find(k => k.trim().toLowerCase().includes('relationship manager') || k.trim().toLowerCase() === 'rm');
+
+    if (!keyClientName || !row[keyClientName]) continue;
+
+    const clientName = String(row[keyClientName]).trim();
+    const pan = keyPan && row[keyPan] ? String(row[keyPan]).trim().toUpperCase() : `UNKNOWN_${Math.random()}`;
+    const rmRaw = keyRm && row[keyRm] ? String(row[keyRm]).trim() : '';
+
+    let rmId: string | null = null;
+    const isRmBlank = !rmRaw || rmRaw.toLowerCase() === 'unassigned' || rmRaw === '-' || rmRaw.toLowerCase() === 'n/a';
+
+    if (!isRmBlank) {
+      const lowerRm = rmRaw.toLowerCase();
+      if (rmMap.has(lowerRm)) {
+        rmId = rmMap.get(lowerRm)!;
+      } else {
+        const cleanName = rmRaw.replace(/[^a-zA-Z0-9]/g, '.').toLowerCase();
+        const newRm = await createUser({
+          name: rmRaw,
+          email: `${cleanName}@plenitude.com`,
+          passwordHash: 'defaultpassword',
+          role: 'RM'
+        });
+        rmId = newRm.id;
+        rmMap.set(lowerRm, rmId);
+        rmsCreated++;
+      }
+    } else {
+      unassignedClients++;
+    }
+
+    const keyFamilyHead = keys.find(k => k.trim().toLowerCase().includes('family head'));
+    const keyTotal = keys.find(k => k.trim().toLowerCase().includes('total portfolio aum') || k.trim().toLowerCase() === 'total' || k.trim().toLowerCase().includes('total aum'));
+    const keyEquity = keys.find(k => k.trim().toLowerCase().includes('equity aum') || k.trim().toLowerCase() === 'equity');
+    const keyDebt = keys.find(k => k.trim().toLowerCase().includes('debt aum') || k.trim().toLowerCase() === 'debt');
+    const keyHybrid = keys.find(k => k.trim().toLowerCase().includes('hybrid aum') || k.trim().toLowerCase() === 'hybrid');
+    const keyUnits = keys.find(k => k.trim().toLowerCase().includes('total units') || k.trim().toLowerCase() === 'units');
+
+    const parsedClient = {
+      name: clientName,
+      rmId: rmId,
+      familyHead: keyFamilyHead && row[keyFamilyHead] ? String(row[keyFamilyHead]).trim() : null,
+      totalAum: parseCurrency(row[keyTotal || '']),
+      equityAum: parseCurrency(row[keyEquity || '']),
+      debtAum: parseCurrency(row[keyDebt || '']),
+      hybridAum: parseCurrency(row[keyHybrid || '']),
+      totalUnits: parseCurrency(row[keyUnits || '']),
+    };
+
+    const clientRecord = await upsertClient(pan, clientName, parsedClient, { ...parsedClient, pan });
+
+    panToClientIdMap.set(pan, clientRecord.id);
+    nameToClientIdMap.set(clientName.toLowerCase(), clientRecord.id);
+
+    await prisma.clientHistory.create({
+      data: {
+        clientId: clientRecord.id,
+        totalAum: parsedClient.totalAum,
+        equityAum: parsedClient.equityAum,
+        debtAum: parsedClient.debtAum,
+        hybridAum: parsedClient.hybridAum,
+        totalUnits: parsedClient.totalUnits
+      }
+    });
+
+    clientsUpserted++;
+  }
+
+  // 4. Pre-fetch Mapping Rules and Research Funds into memory maps
+  const allMappingRules = await prisma.fundMappingRule.findMany();
+  const ruleMap = new Map<string, string>();
+  allMappingRules.forEach(r => ruleMap.set(r.rawName.trim().toLowerCase(), r.researchFundId));
+
+  const allResearchFunds = await prisma.researchFund.findMany({ select: { id: true, name: true } });
+  const researchFundMap = new Map<string, string>();
+  allResearchFunds.forEach(rf => researchFundMap.set(rf.name.trim().toLowerCase(), rf.id));
+
+  // 5. Process MASTER_ALL_HOLDINGS sheet
+  const holdingsToInsert: any[] = [];
+  const historyToInsert: any[] = [];
+
+  for (const row of holdingsRows) {
+    const keys = Object.keys(row);
+    const keyPan = keys.find(k => k.trim().toLowerCase() === 'pan');
+    const keyClientName = keys.find(k => k.trim().toLowerCase().includes('client name') || k.trim().toLowerCase() === 'client');
+    const keyScheme = keys.find(k => k.trim().toLowerCase().includes('scheme name') || k.trim().toLowerCase() === 'scheme' || k.trim().toLowerCase().includes('fund'));
+
+    if (!keyScheme || !row[keyScheme]) continue;
+
+    const schemeRaw = String(row[keyScheme]).trim();
+    const panRaw = keyPan && row[keyPan] ? String(row[keyPan]).trim().toUpperCase() : '';
+    const nameRaw = keyClientName && row[keyClientName] ? String(row[keyClientName]).trim().toLowerCase() : '';
+
+    let clientId = panToClientIdMap.get(panRaw);
+    if (!clientId && nameRaw) {
+      clientId = nameToClientIdMap.get(nameRaw);
+    }
+    if (!clientId) continue;
+
+    const keyFolio = keys.find(k => k.trim().toLowerCase().includes('folio'));
+    const keyTotalAum = keys.find(k => k.trim().toLowerCase().includes('total aum') || k.trim().toLowerCase().includes('current value') || k.trim().toLowerCase() === 'total');
+    const keyEquity = keys.find(k => k.trim().toLowerCase() === 'equity (rs)' || k.trim().toLowerCase() === 'equity');
+    const keyDebt = keys.find(k => k.trim().toLowerCase() === 'debt (rs)' || k.trim().toLowerCase() === 'debt');
+    const keyHybrid = keys.find(k => k.trim().toLowerCase() === 'hybrid (rs)' || k.trim().toLowerCase() === 'hybrid');
+    const keyLiquid = keys.find(k => k.trim().toLowerCase().includes('liquid'));
+    const keyArbitrage = keys.find(k => k.trim().toLowerCase().includes('arbitrage'));
+    const keyOther = keys.find(k => k.trim().toLowerCase().includes('other'));
+    const keyUnits = keys.find(k => k.trim().toLowerCase() === 'units' || k.trim().toLowerCase().includes('units'));
+    const keyAlloc = keys.find(k => k.trim().toLowerCase().includes('allocation'));
+
+    const folio = keyFolio && row[keyFolio] ? String(row[keyFolio]).trim() : undefined;
+    const currentValue = parseCurrency(row[keyTotalAum || '']);
+    const equity = keyEquity ? parseCurrency(row[keyEquity]) : null;
+    const debt = keyDebt ? parseCurrency(row[keyDebt]) : null;
+    const hybrid = keyHybrid ? parseCurrency(row[keyHybrid]) : null;
+    const liquid = keyLiquid ? parseCurrency(row[keyLiquid]) : null;
+    const arbitrage = keyArbitrage ? parseCurrency(row[keyArbitrage]) : null;
+    const other = keyOther ? parseCurrency(row[keyOther]) : null;
+    const units = keyUnits ? parseCurrency(row[keyUnits]) : null;
+    const allocation = keyAlloc && row[keyAlloc] !== undefined ? String(row[keyAlloc]).trim() : null;
+
+    let researchFundId: string | null = null;
+    const lowerScheme = schemeRaw.toLowerCase();
+    if (ruleMap.has(lowerScheme)) {
+      researchFundId = ruleMap.get(lowerScheme)!;
+    } else if (researchFundMap.has(lowerScheme)) {
+      researchFundId = researchFundMap.get(lowerScheme)!;
+    }
+
+    const holdingRecord = {
+      clientId,
+      fundId: researchFundId,
+      fundNameRaw: schemeRaw,
+      folioNumber: folio,
+      currentValue,
+      equity,
+      debt,
+      hybrid,
+      liquid,
+      arbitrage,
+      other,
+      units,
+      allocation
+    };
+
+    holdingsToInsert.push(holdingRecord);
+    historyToInsert.push({
+      clientId,
+      fundId: researchFundId,
+      fundNameRaw: schemeRaw,
+      folio: folio,
+      currentValue,
+      equity,
+      debt,
+      hybrid,
+      liquid,
+      arbitrage,
+      other,
+      units,
+      allocation
+    });
+  }
+
+  // 6. Delete old live holdings and batch-insert
+  await deleteHoldings();
+
+  const chunkSize = 2000;
+  for (let i = 0; i < holdingsToInsert.length; i += chunkSize) {
+    const chunk = holdingsToInsert.slice(i, i + chunkSize);
+    await prisma.clientHolding.createMany({ data: chunk });
+  }
+
+  for (let i = 0; i < historyToInsert.length; i += chunkSize) {
+    const chunk = historyToInsert.slice(i, i + chunkSize);
+    await prisma.holdingHistory.createMany({ data: chunk });
+  }
+
+  return {
+    clientsUpserted,
+    holdingsInserted: holdingsToInsert.length,
+    rmsCreated,
+    unassignedClients
+  };
 };

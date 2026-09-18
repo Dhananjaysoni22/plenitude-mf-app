@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { upload } from '../middlewares/upload';
-import { uploadClients, uploadResearch, uploadHoldings, uploadBulkPortfolios } from '../controllers/upload.controller';
+import { uploadClients, uploadResearch, uploadHoldings, uploadBulkPortfolios, uploadMaster } from '../controllers/upload.controller';
 
 const router = Router();
+
+// /api/upload/master (Unified Master AUM Report)
+router.post('/master', upload.single('file'), uploadMaster);
 
 // /api/upload/clients
 router.post('/clients', upload.single('file'), uploadClients);

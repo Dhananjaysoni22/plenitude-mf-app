@@ -31,8 +31,8 @@ model Client {
   name                  String
   pan                   String
   familyHead            String?
-  rmId                  String
-  rm                    User            @relation(fields: [rmId], references: [id])
+  rmId                  String?
+  rm                    User?           @relation(fields: [rmId], references: [id])
   totalAum              Float           @default(0)
   equityAum             Float           @default(0)
   debtAum               Float           @default(0)

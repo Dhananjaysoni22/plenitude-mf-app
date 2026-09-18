@@ -1,8 +1,17 @@
 
 import { Request, Response } from 'express';
-import { processClientSheet, processResearchSheet, processHoldingsSheet, processBulkPortfolios } from '../services/upload.service';
+import { processClientSheet, processResearchSheet, processHoldingsSheet, processBulkPortfolios, processMasterReport } from '../services/upload.service';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+
+export const uploadMaster = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) throw new AppError('No file uploaded', 400);
+  const result = await processMasterReport(req.file.buffer);
+  res.json({ 
+    message: `Master AUM Report imported successfully! ${result.clientsUpserted} clients and ${result.holdingsInserted} holdings updated.`, 
+    ...result 
+  });
+});
 
 export const uploadClients = asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) throw new AppError('No file uploaded', 400);
